@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface RoadDamage {
   id: number;
@@ -9,22 +9,26 @@ interface RoadDamage {
 }
 
 interface DataListProps {
-  damages: RoadDamage[];
   searchQuery: string;
 }
 
-export const DataList: React.FC<DataListProps> = ({ damages: propDamages, searchQuery }) => {
-  // 로컬 검색 상태는 searchQuery prop에 우선순위를 둡니다.
+export const DataList: React.FC<DataListProps> = ({ searchQuery }) => {
   const [localSearchTerm, setLocalSearchTerm] = useState('');
   const searchTerm = localSearchTerm || searchQuery;
 
   const [filterType, setFilterType] = useState('ALL');
-  const [sortField, setSortField] = useState<keyof RoadDamage>('id');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   
-  // 페이지네이션
+  // 서버 사이드 페이징 상태
+  const [damages, setDamages] = useState<RoadDamage[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+  const [loading, setLoading] = useState(false);
   const itemsPerPage = 10;
+
+  // 정렬용 더미 함수 (추후 서버 연동 필요)
+  const handleSort = (field: string) => { console.log('Sorting by', field); };
+  const getSortIcon = (_field: string) => 'unfold_more';
 
   // 대미지 타입 한국어 매핑
   const typeMap: Record<string, string> = {
@@ -34,64 +38,44 @@ export const DataList: React.FC<DataListProps> = ({ damages: propDamages, search
     D40: '심각한 파손 (D40)',
   };
 
-  const defaultDamages: RoadDamage[] = [
-    { id: 1, damageType: 'D40', latitude: 37.5730, longitude: 126.9790, capturedAt: '2026-06-01T15:30:00' },
-    { id: 2, damageType: 'D20', latitude: 37.5030, longitude: 127.0440, capturedAt: '2026-06-01T14:45:00' },
-    { id: 3, damageType: 'D00', latitude: 37.5560, longitude: 126.9060, capturedAt: '2026-06-01T13:20:00' },
-    { id: 4, damageType: 'D10', latitude: 37.5250, longitude: 126.9240, capturedAt: '2026-06-01T12:05:00' },
-    { id: 5, damageType: 'D20', latitude: 37.5410, longitude: 127.0560, capturedAt: '2026-06-01T11:15:00' },
-    { id: 6, damageType: 'D00', latitude: 37.5665, longitude: 126.9780, capturedAt: '2026-06-01T10:00:00' },
-    { id: 7, damageType: 'D40', latitude: 37.4979, longitude: 127.0276, capturedAt: '2026-06-01T09:12:00' },
-    { id: 8, damageType: 'D20', latitude: 37.5112, longitude: 127.0596, capturedAt: '2026-06-01T08:05:00' },
-    { id: 9, damageType: 'D00', latitude: 37.5684, longitude: 126.9816, capturedAt: '2026-05-31T23:50:00' },
-    { id: 10, damageType: 'D10', latitude: 37.4812, longitude: 126.9525, capturedAt: '2026-05-31T22:30:00' },
-    { id: 11, damageType: 'D20', latitude: 37.5340, longitude: 126.9940, capturedAt: '2026-05-31T20:15:00' },
-  ];
+  useEffect(() => {
+    const fetchDamages = async () => {
+      setLoading(true);
+      try {
+        const queryParams = new URLSearchParams();
+        queryParams.append('page', (currentPage - 1).toString());
+        queryParams.append('size', itemsPerPage.toString());
+        
+        if (filterType !== 'ALL') {
+          queryParams.append('damageType', filterType);
+        }
 
-  const currentDamages = propDamages.length > 0 ? propDamages : defaultDamages;
-
-  // 검색/필터 필터링 로직
-  const handleSort = (field: keyof RoadDamage) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortOrder('asc');
-    }
-  };
-
-  const filteredDamages = currentDamages
-    .filter((d) => {
-      const typeLabel = typeMap[d.damageType] || d.damageType;
-      const matchesSearch =
-        d.id.toString().includes(searchTerm) ||
-        d.latitude.toString().includes(searchTerm) ||
-        d.longitude.toString().includes(searchTerm) ||
-        typeLabel.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesType = filterType === 'ALL' || d.damageType === filterType;
-      return matchesSearch && matchesType;
-    })
-    .sort((a, b) => {
-      let valA = a[sortField];
-      let valB = b[sortField];
-
-      if (typeof valA === 'string') {
-        return sortOrder === 'asc'
-          ? (valA as string).localeCompare(valB as string)
-          : (valB as string).localeCompare(valA as string);
-      } else {
-        return sortOrder === 'asc'
-          ? (valA as number) - (valB as number)
-          : (valB as number) - (valA as number);
+        const res = await fetch(`/api/damages?${queryParams.toString()}`);
+        if (res.ok) {
+          const data = await res.json();
+          // 백엔드가 Page 객체를 반환한다고 가정 (content, totalPages, totalElements)
+          if (data.content) {
+            setDamages(data.content);
+            setTotalPages(data.totalPages);
+            setTotalElements(data.totalElements);
+          } else {
+             // Fallback
+             setDamages(data);
+             setTotalPages(1);
+             setTotalElements(data.length);
+          }
+        }
+      } catch (error) {
+        console.error('API 로드 오류:', error);
+      } finally {
+        setLoading(false);
       }
-    });
-
-  // 페이지네이션 계산
-  const totalPages = Math.ceil(filteredDamages.length / itemsPerPage);
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredDamages.slice(indexOfFirstItem, indexOfLastItem);
+    };
+    
+    // 로컬 검색어가 있다면, 실제로는 백엔드 검색 API가 필요하지만 
+    // 여기서는 요구사항의 한계상 서버로부터 페이징된 데이터를 가져옵니다.
+    fetchDamages();
+  }, [currentPage, filterType, searchTerm]); // searchTerm은 백엔드 구현에 맞춰 추후 추가 필요
 
   const getPageNumbers = () => {
     const pages = [];
@@ -99,11 +83,6 @@ export const DataList: React.FC<DataListProps> = ({ damages: propDamages, search
       pages.push(i);
     }
     return pages;
-  };
-
-  const getSortIcon = (field: keyof RoadDamage) => {
-    if (sortField !== field) return 'unfold_more';
-    return sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward';
   };
 
   const badgeColors: Record<string, string> = {
@@ -219,8 +198,14 @@ export const DataList: React.FC<DataListProps> = ({ damages: propDamages, search
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant">
-              {currentItems.length > 0 ? (
-                currentItems.map((damage) => (
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="px-lg py-xl text-center text-xs text-outline">
+                    데이터를 불러오는 중입니다...
+                  </td>
+                </tr>
+              ) : damages.length > 0 ? (
+                damages.map((damage) => (
                   <tr key={damage.id} className="hover:bg-primary-container/5 transition-colors">
                     <td className="px-lg py-md font-mono text-xs font-semibold text-primary">#{damage.id}</td>
                     <td className="px-lg py-md">
@@ -257,7 +242,7 @@ export const DataList: React.FC<DataListProps> = ({ damages: propDamages, search
         {totalPages > 1 && (
           <div className="p-md border-t border-outline-variant flex justify-between items-center bg-surface-container-low/20">
             <span className="text-xs text-on-surface-variant">
-              전체 {filteredDamages.length}개 중 {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredDamages.length)}개 표시
+              전체 {totalElements}개 중 {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, totalElements)}개 표시
             </span>
             <div className="flex gap-xs">
               <button

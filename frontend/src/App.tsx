@@ -182,7 +182,7 @@ function App() {
           path="/map"
           element={
             <ProtectedLayout>
-              <MapMode damages={damages} />
+              <MapMode />
             </ProtectedLayout>
           }
         />
@@ -190,7 +190,7 @@ function App() {
           path="/damages"
           element={
             <ProtectedLayout>
-              <DataList damages={damages} searchQuery={searchQuery} />
+              <DataList searchQuery={searchQuery} />
             </ProtectedLayout>
           }
         />

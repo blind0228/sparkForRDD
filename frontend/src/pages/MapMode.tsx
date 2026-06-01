@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useRef } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow, MarkerClusterer } from '@react-google-maps/api';
 
 interface RoadDamage {
@@ -10,33 +10,68 @@ interface RoadDamage {
 }
 
 interface MapModeProps {
-  damages: RoadDamage[];
 }
 
-export const MapMode: React.FC<MapModeProps> = ({ damages: propDamages }) => {
+export const MapMode: React.FC<MapModeProps> = () => {
   const [selectedDamage, setSelectedDamage] = useState<RoadDamage | null>(null);
   const [filterType, setFilterType] = useState<string>('ALL');
-
+  const [mapDamages, setMapDamages] = useState<RoadDamage[]>([]);
+  const [mapCenter, setMapCenter] = useState({ lat: 37.53, lng: 126.98 });
+  const [searchQuery, setSearchQuery] = useState('');
+  const mapRef = useRef<google.maps.Map | null>(null);
+  
   // 구글 맵 로더 설정
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
   });
 
-  const defaultDamages: RoadDamage[] = [
-    { id: 101, damageType: 'D40', latitude: 37.5730, longitude: 126.9790, capturedAt: new Date().toISOString() },
-    { id: 102, damageType: 'D20', latitude: 37.5030, longitude: 127.0440, capturedAt: new Date().toISOString() },
-    { id: 103, damageType: 'D00', latitude: 37.5560, longitude: 126.9060, capturedAt: new Date().toISOString() },
-    { id: 104, damageType: 'D10', latitude: 37.5250, longitude: 126.9240, capturedAt: new Date().toISOString() },
-    { id: 105, damageType: 'D20', latitude: 37.5410, longitude: 127.0560, capturedAt: new Date().toISOString() },
-  ];
+  const handleBoundsChanged = (map: google.maps.Map) => {
+    const bounds = map.getBounds();
+    if (!bounds) return;
 
-  const currentDamages = propDamages.length > 0 ? propDamages : defaultDamages;
+    const ne = bounds.getNorthEast();
+    const sw = bounds.getSouthWest();
 
-  // 필터 처리
-  const filteredDamages = currentDamages.filter(
-    (d) => filterType === 'ALL' || d.damageType === filterType
-  );
+    const fetchMapData = async () => {
+      try {
+        const queryParams = new URLSearchParams({
+          minLat: sw.lat().toString(),
+          maxLat: ne.lat().toString(),
+          minLng: sw.lng().toString(),
+          maxLng: ne.lng().toString(),
+        });
+
+        if (filterType !== 'ALL') {
+          queryParams.append('damageType', filterType);
+        }
+
+        const res = await fetch(`/api/damages/map?${queryParams.toString()}`);
+        if (res.ok) {
+          const data = await res.json();
+          setMapDamages(data);
+        }
+      } catch (error) {
+        console.error('지도 데이터 로드 실패:', error);
+      }
+    };
+
+    fetchMapData();
+  };
+
+  const handleSearch = () => {
+    if (!searchQuery.trim() || !window.google) return;
+
+    const geocoder = new window.google.maps.Geocoder();
+    geocoder.geocode({ address: searchQuery }, (results, status) => {
+      if (status === 'OK' && results && results[0]) {
+        const location = results[0].geometry.location;
+        setMapCenter({ lat: location.lat(), lng: location.lng() });
+      } else {
+        alert('해당 위치를 찾을 수 없습니다.');
+      }
+    });
+  };
 
   const severityColors: Record<string, { bg: string; border: string; text: string; pin: string }> = {
     D00: { bg: 'bg-secondary-container', border: 'border-secondary', text: 'text-on-secondary-container', pin: '#545f73' },
@@ -52,9 +87,6 @@ export const MapMode: React.FC<MapModeProps> = ({ damages: propDamages }) => {
     D40: '심각한 파손',
   };
 
-  // 지도 중심 위치 (서울 중심)
-  const center = useMemo(() => ({ lat: 37.53, lng: 126.98 }), []);
-  
   // 구글 맵 다크 모드 스타일
   const mapOptions = {
     disableDefaultUI: false,
@@ -150,6 +182,27 @@ export const MapMode: React.FC<MapModeProps> = ({ damages: propDamages }) => {
             <p className="text-on-surface-variant text-xs mt-xs">도로 손상 지역의 실시간 GPS 좌표 맵입니다.</p>
           </div>
 
+          {/* Search Section */}
+          <div className="space-y-sm">
+            <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">위치 검색</span>
+            <div className="flex gap-xs">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                placeholder="예: 진주시, 강남구..."
+                className="w-full px-md py-sm bg-surface-container-low border border-outline-variant rounded-lg text-xs focus:ring-2 focus:ring-primary/20 focus:outline-none text-on-surface"
+              />
+              <button
+                onClick={handleSearch}
+                className="px-md bg-primary text-on-primary rounded-lg flex items-center justify-center hover:opacity-90 active:scale-95 transition-all"
+              >
+                <span className="material-symbols-outlined text-[18px]">search</span>
+              </button>
+            </div>
+          </div>
+
           {/* Filter Section */}
           <div className="space-y-sm">
             <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">유형 필터</span>
@@ -162,7 +215,7 @@ export const MapMode: React.FC<MapModeProps> = ({ damages: propDamages }) => {
                     : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant hover:bg-surface-container-low'
                 }`}
               >
-                전체보기 ({currentDamages.length})
+                전체보기 ({mapDamages.length})
               </button>
               {Object.keys(severityColors).map((type) => (
                 <button
@@ -178,7 +231,7 @@ export const MapMode: React.FC<MapModeProps> = ({ damages: propDamages }) => {
                     className="w-2 h-2 rounded-full"
                     style={{ backgroundColor: severityColors[type].pin }}
                   ></span>
-                  {type} ({currentDamages.filter((d) => d.damageType === type).length})
+                  {type} ({mapDamages.filter((d) => d.damageType === type).length})
                 </button>
               ))}
             </div>
@@ -190,7 +243,7 @@ export const MapMode: React.FC<MapModeProps> = ({ damages: propDamages }) => {
             <div className="flex justify-between items-baseline">
               <span className="text-xs text-on-surface-variant">선택된 손상 건수:</span>
               <span className="font-display text-lg font-bold text-on-surface">
-                {filteredDamages.length} <span className="text-xs font-normal text-outline">건</span>
+                {mapDamages.length} <span className="text-xs font-normal text-outline">건</span>
               </span>
             </div>
           </div>
@@ -246,10 +299,16 @@ export const MapMode: React.FC<MapModeProps> = ({ damages: propDamages }) => {
         ) : (
           <GoogleMap
             mapContainerStyle={{ width: '100%', height: '100%' }}
-            center={center}
+            center={mapCenter}
             zoom={12}
             options={mapOptions}
             onClick={() => setSelectedDamage(null)}
+            onLoad={(map) => { mapRef.current = map; }}
+            onIdle={() => {
+              if (mapRef.current) {
+                handleBoundsChanged(mapRef.current);
+              }
+            }}
           >
             <MarkerClusterer
               options={{
@@ -258,7 +317,7 @@ export const MapMode: React.FC<MapModeProps> = ({ damages: propDamages }) => {
             >
               {(clusterer) => (
                 <>
-                  {filteredDamages.map((damage) => (
+                  {mapDamages.map((damage) => (
                     <Marker
                       key={damage.id}
                       position={{ lat: damage.latitude, lng: damage.longitude }}

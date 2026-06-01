@@ -6,6 +6,9 @@ import com.rdd.dashboard.repository.RoadDamageRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,12 +25,33 @@ public class RoadDamageController {
     private final RoadDamageRepository roadDamageRepository;
 
     /**
-     * 모든 도로 손상 목록을 반환한다.
+     * 조건에 맞는 도로 손상 목록을 페이징하여 반환한다.
      */
-    @Operation(summary = "전체 손상 목록 조회", description = "데이터베이스에 저장된 모든 도로 손상 정보를 반환합니다.")
+    @Operation(summary = "도로 손상 페이징 조회", description = "대용량 데이터를 위한 서버사이드 페이징 및 필터링 조회를 지원합니다.")
     @GetMapping
-    public List<RoadDamage> getAllDamages() {
-        return roadDamageRepository.findAll();
+    public Page<RoadDamage> getDamages(
+            @RequestParam(required = false) String damageType,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        String type = "ALL".equalsIgnoreCase(damageType) ? null : damageType;
+        return roadDamageRepository.findWithPagination(type, PageRequest.of(page, size, Sort.by("id").descending()));
+    }
+
+    /**
+     * 화면 영역(Bounding Box)에 해당하는 도로 손상 목록을 반환한다.
+     */
+    @Operation(summary = "지도 영역 데이터 조회", description = "지도의 현재 화면 위경도 영역 내에 포함되는 데이터만 조회합니다.")
+    @GetMapping("/map")
+    public List<RoadDamage> getDamagesForMap(
+            @RequestParam Double minLat,
+            @RequestParam Double maxLat,
+            @RequestParam Double minLng,
+            @RequestParam Double maxLng,
+            @RequestParam(required = false) String damageType
+    ) {
+        String type = "ALL".equalsIgnoreCase(damageType) ? null : damageType;
+        return roadDamageRepository.findInBounds(minLat, maxLat, minLng, maxLng, type);
     }
 
     /**

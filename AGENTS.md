@@ -30,5 +30,5 @@
 *   **Superpowers 워크플로우 준수**: 구현 전 `brainstorming`을 통한 설계 확정, `writing-plans`를 통한 작업 계획 수립, `test-driven-development` (TDD) 원칙에 따른 구현을 지향한다.
 *   새로운 기능을 구현하기 전에 기존의 아키텍처와 컨벤션을 먼저 분석하고 일치시킨다.
 
-## 6. 보안 (Security)
+## 7. 보안 (Security)
 *   데이터베이스 비밀번호, API 키 등 민감한 정보는 절대 코드에 하드코딩하지 않으며, 환경 변수(`.env` 등)를 통해 관리한다.
