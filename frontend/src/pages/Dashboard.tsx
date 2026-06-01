@@ -59,34 +59,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
     fetchData();
   }, [damages]);
 
-  // API 호출 실패 혹은 DB가 빌 경우를 위한 고품질 Mock Data 구성
-  const defaultStats: DamageStats[] = [
-    { damageType: 'D00', count: 428 },
-    { damageType: 'D10', count: 215 },
-    { damageType: 'D20', count: 562 },
-    { damageType: 'D40', count: 43 },
-  ];
-
-  const defaultDamages: RoadDamage[] = [
-    { id: 1, damageType: 'D40', latitude: 37.573, longitude: 126.979, capturedAt: new Date(Date.now() - 10 * 60000).toISOString() },
-    { id: 2, damageType: 'D20', latitude: 37.503, longitude: 127.044, capturedAt: new Date(Date.now() - 45 * 60000).toISOString() },
-    { id: 3, damageType: 'D00', latitude: 37.556, longitude: 126.906, capturedAt: new Date(Date.now() - 120 * 60000).toISOString() },
-  ];
-
-  const currentStats = stats.length > 0 ? stats : defaultStats;
-  const currentDamages = damages.length > 0 ? damages : defaultDamages;
-
   // 전체 건수 계산
-  const totalDamages = currentStats.reduce((sum, item) => sum + item.count, 0);
+  const totalDamages = stats.reduce((sum, item) => sum + item.count, 0);
 
   // 고위험 구역 계산 (D40)
-  const highRiskCount = currentStats.find((item) => item.damageType === 'D40')?.count || 0;
+  const highRiskCount = stats.find((item) => item.damageType === 'D40')?.count || 0;
 
   // 최다 발생 유형
-  const mostFrequentType = [...currentStats].sort((a, b) => b.count - a.count)[0]?.damageType || 'D00';
+  const mostFrequentType = stats.length > 0 
+    ? [...stats].sort((a, b) => b.count - a.count)[0]?.damageType 
+    : '-';
 
   // 차트 렌더용 데이터 포맷
-  const chartData = currentStats.map((item) => ({
+  const chartData = stats.map((item) => ({
     name: item.damageType,
     count: item.count,
     fullName: typeMap[item.damageType] || item.damageType,
@@ -277,47 +262,54 @@ export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
             </button>
           </div>
           <div className="space-y-sm flex-grow">
-            {currentDamages.slice(0, 3).map((damage) => (
-              <div
-                key={damage.id}
-                onClick={() => navigate('/damages')}
-                className="flex items-center gap-md p-md rounded-lg hover:bg-surface-container-low transition-colors border border-transparent hover:border-outline-variant cursor-pointer group"
-              >
-                <div className="w-12 h-12 rounded bg-surface-variant overflow-hidden flex-shrink-0">
-                  <img
-                    alt="도로 피해 이미지"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                    src={
-                      damage.damageType === 'D40'
-                        ? 'https://lh3.googleusercontent.com/aida-public/AB6AXuB5hxxHDoL0x8RW8qGMEbJv3NmTwaNNmJf09Tcrk_aBdTq36A4EV7w4glprnw8C7w1me0Ha5GXwmJiz82KzdhvShJ4qb9dFWodKLwOpAZdhD9rO19nCVibMChTWCxiuzyB6C2RVdsZf_AnoLiUXKiV8NzcYJMaiS4PCWqjjTsT8NI0tex6Lx3A2VUEB7VB5NuvAbBORp8jj4PlECMjHiSQANaN7nFyIFlcL1TK_eoHkawWNGNixNBq2aniSznuitdFfUlxofXErgCs'
-                        : damage.damageType === 'D20'
-                        ? 'https://lh3.googleusercontent.com/aida-public/AB6AXuC_Nv0uM6W2T2IhucAZ0SUVyBxdtY-uUPx3bYobGIRfDHLrcviMcaXQ9rQQc2-VVdt77JuyedbQc7Hc66QUtBp9PI-O7vKG_xWQaJ1DywDTwDgKuVdyvgG5F2zGsb9bVDJ61Yt_rMYy-BKqQRsbp3BvoSOLDpKAYL5VSqu3mg9AxL3tvVVAE9V3X3d7dLSSk8stwHEf6MwmmVCKCPN9VGhtEdqJYTlKoFvDpyCsXmLiIrcouEYCzS2Wc3MLvKum4TgbiJsWCXhZg0A'
-                        : 'https://lh3.googleusercontent.com/aida-public/AB6AXuBrrqVXkiM1ElZNV_jRWJWfKh0dT9OH_7ucO4t8RGqMS_5X6lOJYyoEhH0jG_E15cOlZgcLHLSM7zxOPjEKsULw15Dj18A3CAm1G6R1OdtUodNvy7bY6M7SgjXWiP7nU08WuYdT-h7BaFHRgtvospKi2gM9snJZ62d7j7UB7ynp_Hfw6XiptJ23TpxokRO4zMuW6yneAyUcjj4Qfl3b624QZp1fU8Ja1ZesryquscenTapq5pCeTxZBcNBhLyiYDfiThtlfCEfB1l8'
-                    }
-                  />
-                </div>
-                <div className="flex-grow">
-                  <p className="font-bold text-xs text-on-surface">
-                    위치: {damage.latitude.toFixed(4)}, {damage.longitude.toFixed(4)}
-                  </p>
-                  <div className="flex items-center gap-xs mt-0.5">
-                    <span
-                      className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${
+            {damages.length > 0 ? (
+              damages.slice(0, 3).map((damage) => (
+                <div
+                  key={damage.id}
+                  onClick={() => navigate('/damages')}
+                  className="flex items-center gap-md p-md rounded-lg hover:bg-surface-container-low transition-colors border border-transparent hover:border-outline-variant cursor-pointer group"
+                >
+                  <div className="w-12 h-12 rounded bg-surface-variant overflow-hidden flex-shrink-0">
+                    <img
+                      alt="도로 피해 이미지"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      src={
                         damage.damageType === 'D40'
-                          ? 'bg-error/10 text-error'
+                          ? 'https://lh3.googleusercontent.com/aida-public/AB6AXuB5hxxHDoL0x8RW8qGMEbJv3NmTwaNNmJf09Tcrk_aBdTq36A4EV7w4glprnw8C7w1me0Ha5GXwmJiz82KzdhvShJ4qb9dFWodKLwOpAZdhD9rO19nCVibMChTWCxiuzyB6C2RVdsZf_AnoLiUXKiV8NzcYJMaiS4PCWqjjTsT8NI0tex6Lx3A2VUEB7VB5NuvAbBORp8jj4PlECMjHiSQANaN7nFyIFlcL1TK_eoHkawWNGNixNBq2aniSznuitdFfUlxofXErgCs'
                           : damage.damageType === 'D20'
-                          ? 'bg-primary/10 text-primary'
-                          : 'bg-secondary-container text-on-secondary-container'
-                      }`}
-                    >
-                      {damage.damageType}
-                    </span>
-                    <span className="text-[10px] text-outline">{formatTimeAgo(damage.capturedAt)}</span>
+                          ? 'https://lh3.googleusercontent.com/aida-public/AB6AXuC_Nv0uM6W2T2IhucAZ0SUVyBxdtY-uUPx3bYobGIRfDHLrcviMcaXQ9rQQc2-VVdt77JuyedbQc7Hc66QUtBp9PI-O7vKG_xWQaJ1DywDTwDgKuVdyvgG5F2zGsb9bVDJ61Yt_rMYy-BKqQRsbp3BvoSOLDpKAYL5VSqu3mg9AxL3tvVVAE9V3X3d7dLSSk8stwHEf6MwmmVCKCPN9VGhtEdqJYTlKoFvDpyCsXmLiIrcouEYCzS2Wc3MLvKum4TgbiJsWCXhZg0A'
+                          : 'https://lh3.googleusercontent.com/aida-public/AB6AXuBrrqVXkiM1ElZNV_jRWJWfKh0dT9OH_7ucO4t8RGqMS_5X6lOJYyoEhH0jG_E15cOlZgcLHLSM7zxOPjEKsULw15Dj18A3CAm1G6R1OdtUodNvy7bY6M7SgjXWiP7nU08WuYdT-h7BaFHRgtvospKi2gM9snJZ62d7j7UB7ynp_Hfw6XiptJ23TpxokRO4zMuW6yneAyUcjj4Qfl3b624QZp1fU8Ja1ZesryquscenTapq5pCeTxZBcNBhLyiYDfiThtlfCEfB1l8'
+                      }
+                    />
                   </div>
+                  <div className="flex-grow">
+                    <p className="font-bold text-xs text-on-surface">
+                      위치: {damage.latitude.toFixed(4)}, {damage.longitude.toFixed(4)}
+                    </p>
+                    <div className="flex items-center gap-xs mt-0.5">
+                      <span
+                        className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${
+                          damage.damageType === 'D40'
+                            ? 'bg-error/10 text-error'
+                            : damage.damageType === 'D20'
+                            ? 'bg-primary/10 text-primary'
+                            : 'bg-secondary-container text-on-secondary-container'
+                        }`}
+                      >
+                        {damage.damageType}
+                      </span>
+                      <span className="text-[10px] text-outline">{formatTimeAgo(damage.capturedAt)}</span>
+                    </div>
+                  </div>
+                  <span className="material-symbols-outlined text-outline">chevron_right</span>
                 </div>
-                <span className="material-symbols-outlined text-outline">chevron_right</span>
+              ))
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-outline p-lg">
+                <span className="material-symbols-outlined text-4xl mb-xs opacity-50">data_alert</span>
+                <p className="text-xs font-semibold">최근 보고된 기록이 없습니다.</p>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>
