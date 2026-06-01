@@ -99,13 +99,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
     return new Date(isoString).toLocaleDateString('ko-KR');
   };
 
-  // 모의 유지보수 일정 테이블용
-  const mockSchedule = [
-    { id: '#RP-9821', location: '서울시 강남구 논현동 102-1', type: 'D20', priority: '긴급', assign: '박현우 과장', status: '승인 대기' },
-    { id: '#RP-9819', location: '서울시 서초구 방배로 45', type: 'D00', priority: '보통', assign: '이민정 대리', status: '작업 중' },
-    { id: '#RP-9788', location: '서울시 영등포구 국제금융로 10', type: 'D40', priority: '최우선', assign: '정승호 선임', status: '현장 조사' },
-  ];
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px] w-full">
@@ -317,7 +310,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
       {/* Maintenance Schedule Section (High Density Table) */}
       <div className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
         <div className="p-lg border-b border-outline-variant flex justify-between items-center bg-surface-container-low/30">
-          <h3 className="font-headline text-lg font-bold text-on-surface">금주 유지보수 일정</h3>
+          <h3 className="font-headline text-lg font-bold text-on-surface">최근 등록된 손상 상세 (유지보수 대기)</h3>
           <button className="p-2 border border-outline-variant rounded hover:bg-surface-container-low flex items-center justify-center">
             <span className="material-symbols-outlined text-[18px]">filter_list</span>
           </button>
@@ -327,61 +320,46 @@ export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
             <thead className="bg-surface-container-low text-on-surface-variant text-xs uppercase font-bold">
               <tr>
                 <th className="px-lg py-sm">ID</th>
-                <th className="px-lg py-sm">위치</th>
+                <th className="px-lg py-sm">위치 (위/경도)</th>
                 <th className="px-lg py-sm">피해 유형</th>
-                <th className="px-lg py-sm">우선순위</th>
-                <th className="px-lg py-sm">담당자</th>
+                <th className="px-lg py-sm">발견 일시</th>
                 <th className="px-lg py-sm">상태</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant">
-              {mockSchedule.map((row) => (
-                <tr key={row.id} className="hover:bg-primary-container/5 transition-colors">
-                  <td className="px-lg py-md font-mono text-xs font-medium text-primary">{row.id}</td>
-                  <td className="px-lg py-md text-xs text-on-surface">{row.location}</td>
-                  <td className="px-lg py-md">
-                    <span
-                      className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${
-                        row.type === 'D40'
-                          ? 'bg-error/10 text-error'
-                          : row.type === 'D20'
-                          ? 'bg-primary/10 text-primary'
-                          : 'bg-secondary-container text-on-secondary-container'
-                      }`}
-                    >
-                      {typeMap[row.type] || row.type}
-                    </span>
-                  </td>
-                  <td className="px-lg py-md">
-                    <span
-                      className={`text-xs font-bold flex items-center gap-xs ${
-                        row.priority === '최우선' || row.priority === '긴급' ? 'text-error' : 'text-on-surface-variant'
-                      }`}
-                    >
+              {damages.length > 0 ? (
+                damages.slice(0, 5).map((row) => (
+                  <tr key={row.id} className="hover:bg-primary-container/5 transition-colors">
+                    <td className="px-lg py-md font-mono text-xs font-medium text-primary">#{row.id}</td>
+                    <td className="px-lg py-md text-xs text-on-surface">{row.latitude.toFixed(5)}, {row.longitude.toFixed(5)}</td>
+                    <td className="px-lg py-md">
                       <span
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          row.priority === '최우선' || row.priority === '긴급' ? 'bg-error' : 'bg-outline'
+                        className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${
+                          row.damageType === 'D40'
+                            ? 'bg-error/10 text-error'
+                            : row.damageType === 'D20'
+                            ? 'bg-primary/10 text-primary'
+                            : 'bg-secondary-container text-on-secondary-container'
                         }`}
-                      ></span>
-                      {row.priority}
-                    </span>
-                  </td>
-                  <td className="px-lg py-md text-xs text-on-surface-variant">{row.assign}</td>
-                  <td className="px-lg py-md">
-                    <span
-                      className={`text-xs font-bold border px-2 py-0.5 rounded ${
-                        row.status === '작업 중'
-                          ? 'border-primary text-primary'
-                          : row.status === '현장 조사'
-                          ? 'border-green-600 text-green-600'
-                          : 'border-secondary text-secondary'
-                      }`}
-                    >
-                      {row.status}
-                    </span>
+                      >
+                        {typeMap[row.damageType] || row.damageType}
+                      </span>
+                    </td>
+                    <td className="px-lg py-md text-xs text-on-surface-variant">{new Date(row.capturedAt).toLocaleString('ko-KR')}</td>
+                    <td className="px-lg py-md">
+                      <span className="text-xs font-bold border px-2 py-0.5 rounded border-secondary text-secondary">
+                        대기 중
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="px-lg py-xl text-center text-xs text-outline">
+                    유지보수 대기 중인 항목이 없습니다.
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
