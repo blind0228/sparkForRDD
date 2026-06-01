@@ -54,13 +54,49 @@
           {
             "damageType": "D00",
             "count": 15
-          },
-          {
-            "damageType": "D10",
-            "count": 7
           }
         ]
         ```
+
+#### 2.4 도로 손상 정보 등록
+- **Endpoint**: `POST /api/damages`
+- **설명**: 새로운 도로 손상 정보를 등록합니다.
+- **Request Body**:
+    ```json
+    {
+      "damageType": "D20",
+      "latitude": 37.525,
+      "longitude": 126.924
+    }
+    ```
+- **Response**:
+    - **Status Code**: `200 OK`
+    - **Body**: 등록된 `RoadDamage` 객체
+
+#### 2.5 도로 손상 정보 삭제
+- **Endpoint**: `DELETE /api/damages/{id}`
+- **설명**: ID를 기반으로 특정 도로 손상 정보를 삭제합니다.
+- **Response**:
+    - **Status Code**: `200 OK`
+
+---
+
+### [Authentication API]
+
+#### 2.6 로그인
+- **Endpoint**: `POST /api/login`
+- **설명**: 세션 기반 로그인을 수행합니다.
+- **Request (Form-Data)**:
+    - `username`: 이메일 (예: admin@example.com)
+    - `password`: 비밀번호 (예: 1234)
+- **Response**:
+    - **Status Code**: `200 OK` (성공), `401 Unauthorized` (실패)
+
+#### 2.7 로그아웃
+- **Endpoint**: `POST /api/logout`
+- **설명**: 현재 세션을 종료합니다.
+- **Response**:
+    - **Status Code**: `200 OK`
 
 ---
 

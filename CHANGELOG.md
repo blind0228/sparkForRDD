@@ -13,4 +13,5 @@
 - 공식 API 명세서 (docs/api-spec.md) 작성
 - 세션 기반 로그인 인증 (Spring Security) 구현 (ID: admin@example.com, PW: 1234)
 - API 보안 적용 (인증된 사용자만 접근 가능, Health API 및 Swagger 제외)
-- Stitch MCP에서 '도로 손상 통합 관리 시스템' 디자인 정보를 추출하여 최상위 경로에 DESIGN.md 작성
+- 도로 손상 데이터 등록(POST) 및 삭제(DELETE) API 추가
+- Stitch MCP 디자인 가이드를 반영한 프론트엔드-백엔드 연동 및 통합 테스트 수행
