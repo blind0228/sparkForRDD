@@ -31,12 +31,14 @@ export const AdminUsers: React.FC = () => {
   };
 
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [role, setRole] = useState('USER');
   const [dept, setDept] = useState('도로보수실무팀');
 
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || !email.trim() || !password.trim()) return;
 
     try {
       const res = await fetch('/api/users/register', {
@@ -44,12 +46,16 @@ export const AdminUsers: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name, role, dept, email: `${Date.now()}@temp.com`, password: 'temp' }),
+        body: JSON.stringify({ name, role, dept, email, password }),
       });
 
       if (res.ok) {
         fetchUsers();
         setName('');
+        setEmail('');
+        setPassword('');
+      } else {
+        alert('사용자 등록 실패. 중복된 아이디(이메일)일 수 있습니다.');
       }
     } catch (error) {
       console.error('사용자 추가 실패:', error);
@@ -90,6 +96,30 @@ export const AdminUsers: React.FC = () => {
         <div className="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant shadow-sm space-y-md">
           <h3 className="font-headline text-md font-bold text-on-surface">신규 직원 액세스 권한 등록</h3>
           <form onSubmit={handleAddUser} className="space-y-md">
+            <div>
+              <label className="block text-xs font-bold text-on-surface-variant mb-xs">아이디 (이메일)</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="예: user@example.com"
+                className="w-full px-md py-sm bg-surface-container-low border border-outline-variant rounded-lg text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none text-on-surface"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-on-surface-variant mb-xs">임시 비밀번호</label>
+              <input
+                type="text"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="초기 발급 비밀번호"
+                className="w-full px-md py-sm bg-surface-container-low border border-outline-variant rounded-lg text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none text-on-surface"
+              />
+            </div>
+
             <div>
               <label className="block text-xs font-bold text-on-surface-variant mb-xs">성명</label>
               <input
