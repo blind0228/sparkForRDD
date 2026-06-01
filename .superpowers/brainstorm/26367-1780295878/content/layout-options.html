@@ -1,0 +1,40 @@
+<h2>대시보드 레이아웃 선택</h2>
+<p class="subtitle">디자인 명세서의 요구사항에 가장 잘 맞는 레이아웃을 선택해주세요.</p>
+
+<div class="options">
+  <div class="option" data-choice="top-nav" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>상단 내비게이션 (권장)</h3>
+      <p>디자인 명세서의 'Header'와 'Grid Layout'에 최적화된 구조입니다. 넓은 지도를 보기에 좋습니다.</p>
+      <div class="mockup" style="margin-top: 10px;">
+        <div class="mockup-header" style="background: #333; color: white;">Logo | Dashboard | Map | List</div>
+        <div class="mockup-body" style="height: 150px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px;">
+          <div class="placeholder" style="grid-column: span 2; height: 30px;">Summary Cards</div>
+          <div class="placeholder">Chart</div>
+          <div class="placeholder">Google Map</div>
+          <div class="placeholder" style="grid-column: span 2;">Data Table</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="sidebar-nav" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>측면 내비게이션</h3>
+      <p>더 많은 메뉴 항목이 필요할 때 유리한 전문적인 대시보드 스타일입니다.</p>
+      <div class="mockup" style="margin-top: 10px;">
+        <div class="mockup-body" style="height: 180px; display: flex; padding: 0;">
+          <div class="mock-sidebar" style="width: 60px; height: 100%;">Side</div>
+          <div style="flex: 1; padding: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="mockup-header" style="grid-column: span 2; height: 20px;">Title</div>
+            <div class="placeholder" style="grid-column: span 2;">Cards</div>
+            <div class="placeholder">Chart</div>
+            <div class="placeholder">Map</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -8,3 +8,4 @@
 - RoadDamage 엔티티 및 리포지토리 구현 (TDD 적용)
 - Gradle Wrapper (gradlew) 생성 및 설정
 - REST API 컨트롤러 (/api/damages, /api/damages/stats) 구현 (TDD 적용)
+- Swagger UI (SpringDoc OpenAPI) 도입 및 API 문서화
