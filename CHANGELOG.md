@@ -6,3 +6,5 @@
 - H2 데이터베이스 및 JPA 기본 설정
 - 메인 애플리케이션 클래스 및 기본 테스트 코드
 - RoadDamage 엔티티 및 리포지토리 구현 (TDD 적용)
+- Gradle Wrapper (gradlew) 생성 및 설정
+- REST API 컨트롤러 (/api/damages, /api/damages/stats) 구현 (TDD 적용)
