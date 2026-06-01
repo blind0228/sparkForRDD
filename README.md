@@ -41,6 +41,7 @@
 - [디자인 가이드](./DESIGN.md): Stitch MCP 기반의 UI/UX 설계 규칙.
 - [설계 명세서](./docs/superpowers/specs/2026-06-01-rdd-dashboard-design.md): 시스템 아키텍처 및 데이터 모델 설계.
 - [에이전트 헌법](./AGENTS.md): AI 에이전트의 작업 원칙 및 가이드라인.
+- [Spark 연동 가이드](./SPARK_INTEGRATION_GUIDE.md): 데이터 엔지니어를 위한 DB 적재 매뉴얼.
 
 ## 🏃 Quick Starter (빠른 실행 가이드)
 
