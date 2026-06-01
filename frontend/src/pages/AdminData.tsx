@@ -5,6 +5,8 @@ interface RoadDamage {
   damageType: string;
   latitude: number;
   longitude: number;
+  imageX: number;
+  imageY: number;
   capturedAt: string;
 }
 
@@ -22,15 +24,19 @@ export const AdminData: React.FC<AdminDataProps> = ({
   const [damageType, setDamageType] = useState('D00');
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
+  const [imageX, setImageX] = useState('');
+  const [imageY, setImageY] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const latNum = parseFloat(latitude);
     const lngNum = parseFloat(longitude);
+    const imgXNum = parseFloat(imageX);
+    const imgYNum = parseFloat(imageY);
 
-    if (isNaN(latNum) || isNaN(lngNum)) {
-      alert('올바른 좌표를 입력하세요.');
+    if (isNaN(latNum) || isNaN(lngNum) || isNaN(imgXNum) || isNaN(imgYNum)) {
+      alert('올바른 좌표와 이미지 좌표를 입력하세요.');
       return;
     }
 
@@ -38,11 +44,15 @@ export const AdminData: React.FC<AdminDataProps> = ({
       damageType,
       latitude: latNum,
       longitude: lngNum,
+      imageX: imgXNum,
+      imageY: imgYNum,
     });
 
     setSuccessMsg('신규 도로 손상 정보가 성공적으로 등록되었습니다.');
     setLatitude('');
     setLongitude('');
+    setImageX('');
+    setImageY('');
 
     setTimeout(() => {
       setSuccessMsg('');
@@ -91,7 +101,7 @@ export const AdminData: React.FC<AdminDataProps> = ({
                 required
                 value={latitude}
                 onChange={(e) => setLatitude(e.target.value)}
-                placeholder="예: 37.556"
+                placeholder="예: 37.5250"
                 className="w-full px-md py-sm bg-surface-container-low border border-outline-variant rounded-lg text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none text-on-surface"
               />
             </div>
@@ -103,7 +113,31 @@ export const AdminData: React.FC<AdminDataProps> = ({
                 required
                 value={longitude}
                 onChange={(e) => setLongitude(e.target.value)}
-                placeholder="예: 126.906"
+                placeholder="예: 126.9240"
+                className="w-full px-md py-sm bg-surface-container-low border border-outline-variant rounded-lg text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none text-on-surface"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-on-surface-variant mb-xs">이미지 파손 좌표 X</label>
+              <input
+                type="text"
+                required
+                value={imageX}
+                onChange={(e) => setImageX(e.target.value)}
+                placeholder="예: 320.5"
+                className="w-full px-md py-sm bg-surface-container-low border border-outline-variant rounded-lg text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none text-on-surface"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-on-surface-variant mb-xs">이미지 파손 좌표 Y</label>
+              <input
+                type="text"
+                required
+                value={imageY}
+                onChange={(e) => setImageY(e.target.value)}
+                placeholder="예: 240.0"
                 className="w-full px-md py-sm bg-surface-container-low border border-outline-variant rounded-lg text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none text-on-surface"
               />
             </div>

@@ -24,15 +24,17 @@ class RoadDamageRepositoryTest {
     @DisplayName("도로 손상 정보를 저장하고 조회한다.")
     void saveAndFindRoadDamage() {
         // given
-        RoadDamage roadDamage = RoadDamage.builder()
+        RoadDamage damage = RoadDamage.builder()
                 .damageType("Pothole")
-                .latitude(37.123456)
-                .longitude(127.123456)
+                .latitude(37.5)
+                .longitude(127.0)
+                .imageX(100.0)
+                .imageY(100.0)
                 .capturedAt(LocalDateTime.now())
                 .build();
 
         // when
-        RoadDamage savedDamage = roadDamageRepository.save(roadDamage);
+        RoadDamage savedDamage = roadDamageRepository.save(damage);
 
         // then
         assertThat(savedDamage.getId()).isNotNull();
@@ -47,20 +49,26 @@ class RoadDamageRepositoryTest {
         // given
         roadDamageRepository.save(RoadDamage.builder()
                 .damageType("Pothole")
-                .latitude(37.1)
-                .longitude(127.1)
+                .latitude(37.5)
+                .longitude(127.0)
+                .imageX(100.0)
+                .imageY(100.0)
                 .capturedAt(LocalDateTime.now())
                 .build());
         roadDamageRepository.save(RoadDamage.builder()
                 .damageType("Pothole")
-                .latitude(37.2)
-                .longitude(127.2)
+                .latitude(37.5)
+                .longitude(127.0)
+                .imageX(100.0)
+                .imageY(100.0)
                 .capturedAt(LocalDateTime.now())
                 .build());
         roadDamageRepository.save(RoadDamage.builder()
                 .damageType("Crack")
                 .latitude(37.3)
                 .longitude(127.3)
+                .imageX(200.0)
+                .imageY(200.0)
                 .capturedAt(LocalDateTime.now())
                 .build());
 

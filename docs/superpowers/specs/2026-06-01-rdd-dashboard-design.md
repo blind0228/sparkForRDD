@@ -22,6 +22,8 @@
 | damageType | String | 손상 유형 (예: D00, D10, D20, D40) |
 | latitude | Double | 손상 위치의 GPS 위도 |
 | longitude | Double | 손상 위치의 GPS 경도 |
+| imageX | Double | 이미지 내 파손 X 좌표 |
+| imageY | Double | 이미지 내 파손 Y 좌표 |
 | capturedAt | LocalDateTime | 손상 데이터가 기록된 시간 |
 
 ## 5. 시스템 아키텍처

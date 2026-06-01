@@ -5,6 +5,8 @@ interface RoadDamage {
   damageType: string;
   latitude: number;
   longitude: number;
+  imageX: number;
+  imageY: number;
   capturedAt: string;
 }
 
@@ -184,6 +186,9 @@ export const DataList: React.FC<DataListProps> = () => {
                     <span className="material-symbols-outlined text-sm">{getSortIcon('longitude')}</span>
                   </div>
                 </th>
+                <th className="px-lg py-md hover:bg-surface-container-high transition-colors select-none">
+                  이미지 좌표 (X, Y)
+                </th>
                 <th
                   onClick={() => handleSort('capturedAt')}
                   className="px-lg py-md cursor-pointer hover:bg-surface-container-high transition-colors select-none"
@@ -218,6 +223,7 @@ export const DataList: React.FC<DataListProps> = () => {
                     </td>
                     <td className="px-lg py-md font-mono text-xs text-on-surface">{damage.latitude.toFixed(6)}</td>
                     <td className="px-lg py-md font-mono text-xs text-on-surface">{damage.longitude.toFixed(6)}</td>
+                    <td className="px-lg py-md font-mono text-xs text-on-surface">{damage.imageX}, {damage.imageY}</td>
                     <td className="px-lg py-md text-xs text-on-surface-variant">
                       {new Date(damage.capturedAt).toLocaleString('ko-KR')}
                     </td>

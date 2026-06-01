@@ -49,7 +49,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNewReportClick, onLogout, us
     <aside className="w-sidebar_width h-screen fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant shadow-sm z-50 flex flex-col py-lg px-md">
       <Link to="/" className="mb-xl px-xs block cursor-pointer hover:opacity-80 transition-opacity">
         <h1 className="font-display text-lg font-extrabold text-primary tracking-tight">도로 관리 시스템</h1>
-        <p className="font-body text-xs text-on-surface-variant opacity-70">도로 시설물 유지보수</p>
+        <p className="font-body text-xs text-on-surface-variant opacity-70">도로 파손 통합 관리 시스템</p>
       </Link>
 
       <nav className="flex-grow space-y-base">

@@ -15,6 +15,8 @@ interface RoadDamage {
   damageType: string;
   latitude: number;
   longitude: number;
+  imageX: number;
+  imageY: number;
   capturedAt: string;
 }
 
