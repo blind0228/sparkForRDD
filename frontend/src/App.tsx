@@ -33,7 +33,6 @@ function App() {
 
   // 글로벌 도로 손상 데이터 관리
   const [damages, setDamages] = useState<RoadDamage[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
   
   // 모달 제어
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -149,8 +148,6 @@ function App() {
         {/* Main Content Side */}
         <div className="flex-grow ml-sidebar_width flex flex-col min-h-screen pt-16">
           <Header
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
             userName={user.name}
             userDept={user.dept}
           />
@@ -190,7 +187,7 @@ function App() {
           path="/damages"
           element={
             <ProtectedLayout>
-              <DataList searchQuery={searchQuery} />
+              <DataList />
             </ProtectedLayout>
           }
         />

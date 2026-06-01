@@ -9,12 +9,11 @@ interface RoadDamage {
 }
 
 interface DataListProps {
-  searchQuery: string;
 }
 
-export const DataList: React.FC<DataListProps> = ({ searchQuery }) => {
+export const DataList: React.FC<DataListProps> = () => {
   const [localSearchTerm, setLocalSearchTerm] = useState('');
-  const searchTerm = localSearchTerm || searchQuery;
+  const searchTerm = localSearchTerm;
 
   const [filterType, setFilterType] = useState('ALL');
   

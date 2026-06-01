@@ -1,5 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow, MarkerClusterer } from '@react-google-maps/api';
+import { useSearchParams } from 'react-router-dom';
 
 interface RoadDamage {
   id: number;
@@ -19,12 +20,28 @@ export const MapMode: React.FC<MapModeProps> = () => {
   const [mapCenter, setMapCenter] = useState({ lat: 37.53, lng: 126.98 });
   const [searchQuery, setSearchQuery] = useState('');
   const mapRef = useRef<google.maps.Map | null>(null);
+  const [searchParams] = useSearchParams();
   
   // 구글 맵 로더 설정
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
   });
+
+  // URL 파라미터로 넘어온 검색어가 있으면 자동 검색 실행
+  useEffect(() => {
+    const q = searchParams.get('q');
+    if (q && isLoaded && window.google) {
+      setSearchQuery(q);
+      const geocoder = new window.google.maps.Geocoder();
+      geocoder.geocode({ address: q }, (results, status) => {
+        if (status === 'OK' && results && results[0]) {
+          const location = results[0].geometry.location;
+          setMapCenter({ lat: location.lat(), lng: location.lng() });
+        }
+      });
+    }
+  }, [searchParams, isLoaded]);
 
   const handleBoundsChanged = (map: google.maps.Map) => {
     const bounds = map.getBounds();
