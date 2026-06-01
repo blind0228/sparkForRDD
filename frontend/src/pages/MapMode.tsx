@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker, InfoWindow, MarkerClusterer } from '@react-google-maps/api';
 
 interface RoadDamage {
   id: number;
@@ -251,21 +251,32 @@ export const MapMode: React.FC<MapModeProps> = ({ damages: propDamages }) => {
             options={mapOptions}
             onClick={() => setSelectedDamage(null)}
           >
-            {filteredDamages.map((damage) => (
-              <Marker
-                key={damage.id}
-                position={{ lat: damage.latitude, lng: damage.longitude }}
-                onClick={() => setSelectedDamage(damage)}
-                icon={{
-                  path: google.maps.SymbolPath.CIRCLE,
-                  fillColor: severityColors[damage.damageType]?.pin || '#545f73',
-                  fillOpacity: 1,
-                  strokeWeight: 2,
-                  strokeColor: '#FFFFFF',
-                  scale: 8,
-                }}
-              />
-            ))}
+            <MarkerClusterer
+              options={{
+                imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m',
+              }}
+            >
+              {(clusterer) => (
+                <>
+                  {filteredDamages.map((damage) => (
+                    <Marker
+                      key={damage.id}
+                      position={{ lat: damage.latitude, lng: damage.longitude }}
+                      onClick={() => setSelectedDamage(damage)}
+                      clusterer={clusterer}
+                      icon={{
+                        path: google.maps.SymbolPath.CIRCLE,
+                        fillColor: severityColors[damage.damageType]?.pin || '#545f73',
+                        fillOpacity: 1,
+                        strokeWeight: 2,
+                        strokeColor: '#FFFFFF',
+                        scale: 8,
+                      }}
+                    />
+                  ))}
+                </>
+              )}
+            </MarkerClusterer>
             
             {/* 팝업 정보창 (InfoWindow) */}
             {selectedDamage && (
