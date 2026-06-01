@@ -4,6 +4,7 @@ import com.rdd.dashboard.config.SecurityConfig;
 import com.rdd.dashboard.dto.DamageStatsDto;
 import com.rdd.dashboard.entity.RoadDamage;
 import com.rdd.dashboard.repository.RoadDamageRepository;
+import com.rdd.dashboard.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,9 @@ class RoadDamageControllerTest {
 
     @MockBean
     private RoadDamageRepository roadDamageRepository;
+
+    @MockBean
+    private UserRepository userRepository;
 
     @Test
     @WithMockUser

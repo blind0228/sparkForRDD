@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface SystemUser {
   id: number;
@@ -9,37 +9,73 @@ interface SystemUser {
 }
 
 export const AdminUsers: React.FC = () => {
-  const [users, setUsers] = useState<SystemUser[]>([
-    { id: 1, name: '김관리 선임', role: 'ADMIN', dept: '시설유지보수팀', joinedAt: '2025-01-10' },
-    { id: 2, name: '이보수 사원', role: 'USER', dept: '도로보수실무팀', joinedAt: '2025-05-15' },
-    { id: 3, name: '정승호 선임', role: 'USER', dept: '시설관제운영팀', joinedAt: '2025-02-20' },
-  ]);
+  const [users, setUsers] = useState<SystemUser[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch('/api/users');
+      if (res.ok) {
+        const data = await res.json();
+        setUsers(data);
+      }
+    } catch (error) {
+      console.error('사용자 목록 로드 실패:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const [name, setName] = useState('');
   const [role, setRole] = useState('USER');
   const [dept, setDept] = useState('도로보수실무팀');
 
-  const handleAddUser = (e: React.FormEvent) => {
+  const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
-    const newUser: SystemUser = {
-      id: Date.now(),
-      name,
-      role,
-      dept,
-      joinedAt: new Date().toISOString().split('T')[0],
-    };
+    try {
+      const res = await fetch('/api/users/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, role, dept, email: `${Date.now()}@temp.com`, password: 'temp' }),
+      });
 
-    setUsers([newUser, ...users]);
-    setName('');
-  };
-
-  const handleDeleteUser = (id: number) => {
-    if (confirm('해당 사용자의 계정 권한을 해제하시겠습니까?')) {
-      setUsers(users.filter((u) => u.id !== id));
+      if (res.ok) {
+        fetchUsers();
+        setName('');
+      }
+    } catch (error) {
+      console.error('사용자 추가 실패:', error);
     }
   };
+
+  const handleDeleteUser = async (id: number) => {
+    if (confirm('해당 사용자의 계정 권한을 해제하시겠습니까?')) {
+      try {
+        const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          setUsers(users.filter((u) => u.id !== id));
+        }
+      } catch (error) {
+        console.error('사용자 삭제 실패:', error);
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px] w-full">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-lg space-y-lg">

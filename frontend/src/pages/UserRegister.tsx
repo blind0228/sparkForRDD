@@ -9,12 +9,29 @@ export const UserRegister: React.FC = () => {
   const [password, setPassword] = useState('');
   const [success, setSuccess] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSuccess(true);
-    setTimeout(() => {
-      navigate('/login');
-    }, 2500);
+    try {
+      const res = await fetch('/api/users/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password, name, dept }),
+      });
+
+      if (res.ok) {
+        setSuccess(true);
+        setTimeout(() => {
+          navigate('/login');
+        }, 2500);
+      } else {
+        alert('회원가입에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('회원가입 중 오류:', error);
+      alert('서버와 통신 중 오류가 발생했습니다.');
+    }
   };
 
   return (
