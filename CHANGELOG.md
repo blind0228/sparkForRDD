@@ -9,3 +9,5 @@
 - Gradle Wrapper (gradlew) 생성 및 설정
 - REST API 컨트롤러 (/api/damages, /api/damages/stats) 구현 (TDD 적용)
 - Swagger UI (SpringDoc OpenAPI) 도입 및 API 문서화
+- 헬스 체크 API (/api/health) 추가
+- 공식 API 명세서 (docs/api-spec.md) 작성
