@@ -10,7 +10,7 @@ import {
   Cell,
 } from 'recharts';
 
-import { RoadDamageMarker, DamageStats } from '../types/damage';
+import type { RoadDamageMarker, DamageStats } from '../types/damage';
 
 interface CountryStats {
   country: string;
@@ -209,6 +209,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
         </div>
       </div>
 
+      <p className="text-[10px] text-outline mt-2 italic">* 본 위치 정보는 시각화를 위한 가상 데이터이며 실제 촬영 위치와 다를 수 있습니다.</p>
+
       {/* Statistics & Records Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
         {/* Statistics Chart Section */}
@@ -278,7 +280,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
                     <img
                       alt="도로 피해 이미지"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                      src={damage.imageUrl}
+                      src={damage.imageUrl || `/images/${damage.imageFileName}`}
                     />
                   </div>
                   <div className="flex-grow">

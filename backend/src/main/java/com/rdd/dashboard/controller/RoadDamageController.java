@@ -1,5 +1,6 @@
 package com.rdd.dashboard.controller;
 
+import com.rdd.dashboard.dto.CountryStatsDto;
 import com.rdd.dashboard.dto.DamageStatsDto;
 import com.rdd.dashboard.entity.RoadDamageLabel;
 import com.rdd.dashboard.entity.RoadDamageMarker;
@@ -43,5 +44,11 @@ public class RoadDamageController {
     @GetMapping("/stats/types")
     public List<DamageStatsDto> getDamageTypeStats() {
         return roadDamageLabelRepository.findDamageTypeStats();
+    }
+
+    @Operation(summary = "국가별 마커 통계", description = "국가별 도로 손상 마커 개수 통계를 조회합니다.")
+    @GetMapping("/stats/countries")
+    public List<CountryStatsDto> getCountryStats() {
+        return roadDamageMarkerRepository.findCountryStats();
     }
 }

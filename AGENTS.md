@@ -14,7 +14,8 @@
 ## 3. 기술 스택 (Tech Stack)
 *   **Backend**: Java, Spring Boot 3.x, Spring Data JPA
 *   **Frontend**: React (TypeScript), Tailwind CSS
-*   **Database**: H2 (개발용), MySQL (운영용)
+*   **Database**: PostgreSQL (Render Managed)
+*   **Environment**: Dotenv for credential management
 
 ## 4. 코딩 스타일 및 아키텍처 (Coding Style & Architecture)
 *   Spring Boot 백엔드는 Controller - Service - Repository의 계층적 아키텍처를 엄격히 따른다.

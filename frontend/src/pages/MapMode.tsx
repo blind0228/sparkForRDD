@@ -1,24 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow, MarkerClusterer } from '@react-google-maps/api';
 import { useSearchParams } from 'react-router-dom';
-
-interface RoadDamage {
-  id: number;
-  damageType: string;
-  latitude: number;
-  longitude: number;
-  imageX: number;
-  imageY: number;
-  capturedAt: string;
-}
+import type { RoadDamageMarker } from '../types/damage';
+import { DamageDetailModal } from '../components/DamageDetailModal';
 
 interface MapModeProps {
 }
 
 export const MapMode: React.FC<MapModeProps> = () => {
-  const [selectedDamage, setSelectedDamage] = useState<RoadDamage | null>(null);
-  const [filterType, setFilterType] = useState<string>('ALL');
-  const [mapDamages, setMapDamages] = useState<RoadDamage[]>([]);
+  const [selectedMarker, setSelectedMarker] = useState<RoadDamageMarker | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [markers, setMarkers] = useState<RoadDamageMarker[]>([]);
   const [mapCenter, setMapCenter] = useState({ lat: 37.53, lng: 126.98 });
   const [searchQuery, setSearchQuery] = useState('');
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -29,6 +21,22 @@ export const MapMode: React.FC<MapModeProps> = () => {
     id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
   });
+
+  // 초기 데이터 로드
+  useEffect(() => {
+    const fetchMarkers = async () => {
+      try {
+        const res = await fetch('/api/damages/markers');
+        if (res.ok) {
+          const data = await res.json();
+          setMarkers(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch markers:', error);
+      }
+    };
+    fetchMarkers();
+  }, []);
 
   // URL 파라미터로 넘어온 검색어가 있으면 자동 검색 실행
   useEffect(() => {
@@ -45,39 +53,6 @@ export const MapMode: React.FC<MapModeProps> = () => {
     }
   }, [searchParams, isLoaded]);
 
-  const handleBoundsChanged = (map: google.maps.Map) => {
-    const bounds = map.getBounds();
-    if (!bounds) return;
-
-    const ne = bounds.getNorthEast();
-    const sw = bounds.getSouthWest();
-
-    const fetchMapData = async () => {
-      try {
-        const queryParams = new URLSearchParams({
-          minLat: sw.lat().toString(),
-          maxLat: ne.lat().toString(),
-          minLng: sw.lng().toString(),
-          maxLng: ne.lng().toString(),
-        });
-
-        if (filterType !== 'ALL') {
-          queryParams.append('damageType', filterType);
-        }
-
-        const res = await fetch(`/api/damages/map?${queryParams.toString()}`);
-        if (res.ok) {
-          const data = await res.json();
-          setMapDamages(data);
-        }
-      } catch (error) {
-        console.error('지도 데이터 로드 실패:', error);
-      }
-    };
-
-    fetchMapData();
-  };
-
   const handleSearch = () => {
     if (!searchQuery.trim() || !window.google) return;
 
@@ -92,18 +67,9 @@ export const MapMode: React.FC<MapModeProps> = () => {
     });
   };
 
-  const severityColors: Record<string, { bg: string; border: string; text: string; pin: string }> = {
-    D00: { bg: 'bg-secondary-container', border: 'border-secondary', text: 'text-on-secondary-container', pin: '#545f73' },
-    D10: { bg: 'bg-blue-100', border: 'border-blue-300', text: 'text-blue-800', pin: '#2170e4' },
-    D20: { bg: 'bg-primary/10', border: 'border-primary/20', text: 'text-primary', pin: '#0058be' },
-    D40: { bg: 'bg-error/10', border: 'border-error/20', text: 'text-error', pin: '#ba1a1a' },
-  };
-
-  const typeMap: Record<string, string> = {
-    D00: '종방향 균열',
-    D10: '횡방향 균열',
-    D20: '포트홀',
-    D40: '심각한 파손',
+  const handleMarkerClick = (marker: RoadDamageMarker) => {
+    setSelectedMarker(marker);
+    setIsModalOpen(true);
   };
 
   // 구글 맵 다크 모드 스타일
@@ -222,66 +188,34 @@ export const MapMode: React.FC<MapModeProps> = () => {
             </div>
           </div>
 
-          {/* Filter Section */}
-          <div className="space-y-sm">
-            <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">유형 필터</span>
-            <div className="grid grid-cols-2 gap-xs">
-              <button
-                onClick={() => setFilterType('ALL')}
-                className={`py-sm px-md rounded-lg text-xs font-bold border transition-colors ${
-                  filterType === 'ALL'
-                    ? 'bg-primary text-on-primary border-primary shadow-sm'
-                    : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant hover:bg-surface-container-low'
-                }`}
-              >
-                전체보기 ({mapDamages.length})
-              </button>
-              {Object.keys(severityColors).map((type) => (
-                <button
-                  key={type}
-                  onClick={() => setFilterType(type)}
-                  className={`py-sm px-md rounded-lg text-xs font-bold border transition-colors flex items-center justify-center gap-xs ${
-                    filterType === type
-                      ? 'bg-primary text-on-primary border-primary shadow-sm'
-                      : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant hover:bg-surface-container-low'
-                  }`}
-                >
-                  <span
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: severityColors[type].pin }}
-                  ></span>
-                  {type} ({mapDamages.filter((d) => d.damageType === type).length})
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Statistics Summary inside Map Control */}
           <div className="bg-surface-container-low p-md rounded-xl border border-outline-variant space-y-xs">
             <span className="text-[10px] font-bold text-outline uppercase tracking-wider">지도 내 관측치</span>
             <div className="flex justify-between items-baseline">
-              <span className="text-xs text-on-surface-variant">선택된 손상 건수:</span>
+              <span className="text-xs text-on-surface-variant">발견된 손상 건수:</span>
               <span className="font-display text-lg font-bold text-on-surface">
-                {mapDamages.length} <span className="text-xs font-normal text-outline">건</span>
+                {markers.length} <span className="text-xs font-normal text-outline">건</span>
               </span>
             </div>
           </div>
+
+          <p className="text-[10px] text-outline mt-2 italic">* 본 위치 정보는 시각화를 위한 가상 데이터이며 실제 촬영 위치와 다를 수 있습니다.</p>
         </div>
 
         {/* Selected Point Detail Panel */}
-        {selectedDamage ? (
+        {selectedMarker ? (
           <div className="bg-surface-container-lowest p-md rounded-xl border border-outline shadow-sm space-y-sm">
             <div className="flex justify-between items-start">
               <div>
                 <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-primary/10 text-primary">
-                  ID: #{selectedDamage.id}
+                  ID: #{selectedMarker.id}
                 </span>
                 <h4 className="font-bold text-xs text-on-surface mt-xs">
-                  {typeMap[selectedDamage.damageType] || selectedDamage.damageType}
+                  {selectedMarker.fileName}
                 </h4>
               </div>
               <button
-                onClick={() => setSelectedDamage(null)}
+                onClick={() => setSelectedMarker(null)}
                 className="text-outline hover:text-on-surface p-1"
               >
                 <span className="material-symbols-outlined text-[16px]">close</span>
@@ -290,16 +224,22 @@ export const MapMode: React.FC<MapModeProps> = () => {
             <div className="text-[11px] space-y-xs text-on-surface-variant">
               <p className="flex justify-between">
                 <span>위도:</span>
-                <span className="font-mono">{selectedDamage.latitude.toFixed(6)}</span>
+                <span className="font-mono">{selectedMarker.latitude.toFixed(6)}</span>
               </p>
               <p className="flex justify-between">
                 <span>경도:</span>
-                <span className="font-mono">{selectedDamage.longitude.toFixed(6)}</span>
+                <span className="font-mono">{selectedMarker.longitude.toFixed(6)}</span>
               </p>
               <p className="flex justify-between">
                 <span>감지 시간:</span>
-                <span>{new Date(selectedDamage.capturedAt).toLocaleString('ko-KR')}</span>
+                <span>{new Date(selectedMarker.createdAt).toLocaleString('ko-KR')}</span>
               </p>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="w-full mt-sm py-xs bg-primary/10 text-primary text-[10px] font-bold rounded hover:bg-primary/20 transition-colors"
+              >
+                상세 보기
+              </button>
             </div>
           </div>
         ) : (
@@ -321,13 +261,8 @@ export const MapMode: React.FC<MapModeProps> = () => {
             center={mapCenter}
             zoom={12}
             options={mapOptions}
-            onClick={() => setSelectedDamage(null)}
+            onClick={() => setSelectedMarker(null)}
             onLoad={(map) => { mapRef.current = map; }}
-            onIdle={() => {
-              if (mapRef.current) {
-                handleBoundsChanged(mapRef.current);
-              }
-            }}
           >
             <MarkerClusterer
               options={{
@@ -336,15 +271,15 @@ export const MapMode: React.FC<MapModeProps> = () => {
             >
               {(clusterer) => (
                 <>
-                  {mapDamages.map((damage) => (
+                  {markers.map((marker) => (
                     <Marker
-                      key={damage.id}
-                      position={{ lat: damage.latitude, lng: damage.longitude }}
-                      onClick={() => setSelectedDamage(damage)}
+                      key={marker.id}
+                      position={{ lat: marker.latitude, lng: marker.longitude }}
+                      onClick={() => handleMarkerClick(marker)}
                       clusterer={clusterer}
                       icon={{
                         path: google.maps.SymbolPath.CIRCLE,
-                        fillColor: severityColors[damage.damageType]?.pin || '#545f73',
+                        fillColor: '#0058be',
                         fillOpacity: 1,
                         strokeWeight: 2,
                         strokeColor: '#FFFFFF',
@@ -357,20 +292,26 @@ export const MapMode: React.FC<MapModeProps> = () => {
             </MarkerClusterer>
             
             {/* 팝업 정보창 (InfoWindow) */}
-            {selectedDamage && (
+            {selectedMarker && (
               <InfoWindow
-                position={{ lat: selectedDamage.latitude, lng: selectedDamage.longitude }}
-                onCloseClick={() => setSelectedDamage(null)}
+                position={{ lat: selectedMarker.latitude, lng: selectedMarker.longitude }}
+                onCloseClick={() => setSelectedMarker(null)}
               >
                 <div className="p-1 text-slate-900">
-                  <p className="font-bold text-sm mb-1">{typeMap[selectedDamage.damageType] || selectedDamage.damageType}</p>
-                  <p className="text-xs">ID: #{selectedDamage.id}</p>
+                  <p className="font-bold text-sm mb-1">{selectedMarker.fileName}</p>
+                  <p className="text-xs">ID: #{selectedMarker.id}</p>
                 </div>
               </InfoWindow>
             )}
           </GoogleMap>
         )}
       </div>
+
+      <DamageDetailModal 
+        isOpen={isModalOpen}
+        marker={selectedMarker}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 };

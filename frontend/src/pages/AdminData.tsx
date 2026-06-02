@@ -1,18 +1,9 @@
 import React, { useState } from 'react';
-
-interface RoadDamage {
-  id: number;
-  damageType: string;
-  latitude: number;
-  longitude: number;
-  imageX: number;
-  imageY: number;
-  capturedAt: string;
-}
+import type { RoadDamageMarker } from '../types/damage';
 
 interface AdminDataProps {
-  damages: RoadDamage[];
-  onAddDamage: (damage: Omit<RoadDamage, 'id' | 'capturedAt'>) => void;
+  damages: RoadDamageMarker[];
+  onAddDamage: (damage: any) => void;
   onDeleteDamage: (id: number) => void;
 }
 
@@ -162,7 +153,7 @@ export const AdminData: React.FC<AdminDataProps> = ({
               <thead className="bg-surface-container-low text-on-surface-variant text-[11px] font-bold sticky top-0 border-b border-outline-variant">
                 <tr>
                   <th className="px-md py-sm">ID</th>
-                  <th className="px-md py-sm">유형</th>
+                  <th className="px-md py-sm">파일명</th>
                   <th className="px-md py-sm">위도</th>
                   <th className="px-md py-sm">경도</th>
                   <th className="px-md py-sm">제어</th>
@@ -173,7 +164,7 @@ export const AdminData: React.FC<AdminDataProps> = ({
                   <tr key={d.id} className="hover:bg-primary-container/5 transition-colors">
                     <td className="px-md py-xs font-mono text-[11px] text-primary">#{d.id}</td>
                     <td className="px-md py-xs text-[11px]">
-                      <span className="font-semibold text-on-surface-variant">{d.damageType}</span>
+                      <span className="font-semibold text-on-surface-variant">{d.fileName}</span>
                     </td>
                     <td className="px-md py-xs font-mono text-[11px] text-on-surface">{d.latitude.toFixed(4)}</td>
                     <td className="px-md py-xs font-mono text-[11px] text-on-surface">{d.longitude.toFixed(4)}</td>
