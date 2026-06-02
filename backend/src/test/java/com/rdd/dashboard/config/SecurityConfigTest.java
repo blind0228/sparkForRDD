@@ -24,7 +24,7 @@ class SecurityConfigTest {
     @Test
     @DisplayName("인증되지 않은 사용자는 API 접근 시 401 또는 302 리다이렉트가 발생한다.")
     void unauthenticatedAccess() throws Exception {
-        mockMvc.perform(get("/api/damages"))
+        mockMvc.perform(get("/api/damages/markers"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -46,7 +46,7 @@ class SecurityConfigTest {
     @WithMockUser(username = "admin@example.com")
     @DisplayName("인증된 사용자는 API에 접근할 수 있다.")
     void authenticatedAccess() throws Exception {
-        mockMvc.perform(get("/api/damages"))
+        mockMvc.perform(get("/api/damages/markers"))
                 .andExpect(status().isOk());
     }
 }
