@@ -116,6 +116,12 @@ public class RoadDamageController {
         return roadDamageMarkerRepository.findCountryStats();
     }
 
+    @Operation(summary = "국가별-유형별 통계", description = "국가별 파손 유형 분포 통계를 조회합니다.")
+    @GetMapping("/stats/country-types")
+    public List<Object[]> getCountryDamageTypeStats() {
+        return roadDamageLabelRepository.findCountryDamageTypeStats();
+    }
+
     @Operation(summary = "일별 마커 통계", description = "날짜별 도로 손상 마커 개수 통계를 조회합니다.")
     @GetMapping("/stats/daily")
     public List<Object[]> getDailyStats() {
