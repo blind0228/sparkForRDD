@@ -39,14 +39,27 @@ export const MapMode: React.FC<MapModeProps> = () => {
     const ne = bounds.getNorthEast();
     const sw = bounds.getSouthWest();
 
-    const minLat = sw.lat();
-    const minLng = sw.lng();
-    const maxLat = ne.lat();
-    const maxLng = ne.lng();
+    // 전 세계를 볼 때 위경도 범위를 안전한 값으로 캡핑 (-180~180, -85~85)
+    // 구글 맵이 날짜 변경선을 넘어갈 경우의 처리를 포함
+    const minLat = Math.max(-85, sw.lat());
+    const minLng = sw.lng() < ne.lng() ? sw.lng() : -180;
+    const maxLat = Math.min(85, ne.lat());
+    const maxLng = sw.lng() < ne.lng() ? ne.lng() : 180;
 
     try {
-      if (currentZoom < 10) {
-        // 줌 레벨이 아주 낮을 때: 히트맵 데이터
+      if (currentZoom < 5) {
+        // 전 세계 단위 (매우 낮은 줌)
+        const gridSize = 10.0; // 매우 큰 그리드
+        const url = `/api/damages/clusters?minLat=-85&minLng=-180&maxLat=85&maxLng=180&gridSize=${gridSize}`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          setHeatmapData(data.map((c: any) => ({ lat: c.latitude, lng: c.longitude })));
+          setClusters([]);
+          setMarkers([]);
+        }
+      } else if (currentZoom < 10) {
+        // 국가/대륙 단위
         const gridSize = Math.pow(2, 12 - currentZoom) * 0.2;
         const url = `/api/damages/clusters?minLat=${minLat}&minLng=${minLng}&maxLat=${maxLat}&maxLng=${maxLng}&gridSize=${gridSize}`;
         const res = await fetch(url);
