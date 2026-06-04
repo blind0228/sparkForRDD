@@ -12,6 +12,11 @@ import java.util.List;
 public interface RoadDamageMarkerRepository extends JpaRepository<RoadDamageMarker, Long> {
     List<RoadDamageMarker> findByCountry(String country);
 
+    @Query(value = "SELECT * FROM road_damage_markers " +
+            "WHERE geom && ST_MakeEnvelope(?2, ?1, ?4, ?3, 4326) " +
+            "LIMIT ?5", nativeQuery = true)
+    List<RoadDamageMarker> findMarkersInViewport(double minLat, double minLng, double maxLat, double maxLng, int limit);
+
     @Query("SELECT new com.rdd.dashboard.dto.CountryStatsDto(rm.country, COUNT(rm)) " +
            "FROM RoadDamageMarker rm GROUP BY rm.country")
     List<CountryStatsDto> findCountryStats();

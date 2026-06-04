@@ -2,6 +2,8 @@ package com.rdd.dashboard.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.locationtech.jts.geom.Point;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
 
 @Entity
@@ -19,4 +21,8 @@ public class RoadDamageMarker {
     private Double longitude;
     private Integer totalDamageCount;
     private LocalDateTime createdAt;
+
+    @JsonIgnore
+    @Column(columnDefinition = "geometry(Point, 4326)")
+    private Point geom;
 }

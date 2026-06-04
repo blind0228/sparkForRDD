@@ -25,9 +25,20 @@ public class RoadDamageController {
     private final RoadDamageMarkerRepository roadDamageMarkerRepository;
     private final RoadDamageLabelRepository roadDamageLabelRepository;
 
-    @Operation(summary = "도로 손상 마커 조회", description = "국가별 또는 전체 도로 손상 마커를 조회합니다.")
+    @Operation(summary = "도로 손상 마커 조회", description = "영역(BBox), 국가별 또는 전체 도로 손상 마커를 조회합니다.")
     @GetMapping("/markers")
-    public List<RoadDamageMarker> getMarkers(@RequestParam(required = false) String country) {
+    public List<RoadDamageMarker> getMarkers(
+            @RequestParam(required = false) String country,
+            @RequestParam(required = false) Double minLat,
+            @RequestParam(required = false) Double minLng,
+            @RequestParam(required = false) Double maxLat,
+            @RequestParam(required = false) Double maxLng,
+            @RequestParam(defaultValue = "1000") Integer limit) {
+        
+        if (minLat != null && minLng != null && maxLat != null && maxLng != null) {
+            return roadDamageMarkerRepository.findMarkersInViewport(minLat, minLng, maxLat, maxLng, limit);
+        }
+        
         if (country != null && !country.isEmpty()) {
             return roadDamageMarkerRepository.findByCountry(country);
         }

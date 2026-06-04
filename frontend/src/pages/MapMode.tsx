@@ -22,21 +22,32 @@ export const MapMode: React.FC<MapModeProps> = () => {
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
   });
 
-  // 초기 데이터 로드
-  useEffect(() => {
-    const fetchMarkers = async () => {
-      try {
-        const res = await fetch('/api/damages/markers');
-        if (res.ok) {
-          const data = await res.json();
-          setMarkers(data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch markers:', error);
+  // 지도 영역 변경 시 데이터 페칭
+  const handleIdle = async () => {
+    if (!mapRef.current) return;
+
+    const bounds = mapRef.current.getBounds();
+    if (!bounds) return;
+
+    const ne = bounds.getNorthEast();
+    const sw = bounds.getSouthWest();
+
+    const minLat = sw.lat();
+    const minLng = sw.lng();
+    const maxLat = ne.lat();
+    const maxLng = ne.lng();
+
+    try {
+      const url = `/api/damages/markers?minLat=${minLat}&minLng=${minLng}&maxLat=${maxLat}&maxLng=${maxLng}&limit=1000`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setMarkers(data);
       }
-    };
-    fetchMarkers();
-  }, []);
+    } catch (error) {
+      console.error('Failed to fetch markers in viewport:', error);
+    }
+  };
 
   // URL 파라미터로 넘어온 검색어가 있으면 자동 검색 실행
   useEffect(() => {
@@ -263,6 +274,7 @@ export const MapMode: React.FC<MapModeProps> = () => {
             options={mapOptions}
             onClick={() => setSelectedMarker(null)}
             onLoad={(map) => { mapRef.current = map; }}
+            onIdle={handleIdle}
           >
             <MarkerClusterer
               options={{
