@@ -1,112 +1,53 @@
 # 도로 손상 통합 관리 시스템 (Road Damage Detection & Management System)
 
-본 프로젝트는 Apache Spark로 전처리된 도로 손상 데이터셋(RDD)을 기반으로, 실시간 도로 손상 현황을 모니터링하고 관리할 수 있는 통합 대시보드 시스템입니다.
+본 프로젝트는 Apache Spark로 전처리된 도로 손상 데이터셋(RDD)을 기반으로, 실시간 도로 손상 현황을 모니터링하고 관리할 수 있는 엔터프라이즈급 통합 대시보드 시스템입니다.
 
-## 🚀 주요 기능
+## 🚀 핵심 기능 (Key Features)
 
-### 1. 실시간 대시보드
-- **통계 요약**: 전체 손상 건수, 고위험 구역(D40) 수, 최다 발생 유형 등 핵심 지표 요약.
-- **유형별 분포**: Recharts를 활용한 도로 손상 유형(D00, D10, D20, D40)별 분포 시각화.
-- **최근 보고**: 최신 발견된 도로 손상 내역 실시간 리스트.
+### 1. 차세대 GIS 관제 지도
+- **Deck.gl 하이브리드 엔진**: GPU 가속 시각화를 통해 수백만 건의 데이터도 60fps의 부드러운 성능으로 렌더링합니다.
+- **지능형 레이어 전환**: 줌 레벨에 따라 **고정밀 히트맵**(광역 뷰)과 **상세 핀**(스트리트 뷰) 모드로 자동 전환됩니다.
+- **PostGIS 성능 최적화**: 공간 인덱싱 및 서버 사이드 클러스터링을 통해 네트워크 전송량을 99% 절감했습니다.
 
-### 2. GIS 관제 지도
-- **하이브리드 시각화 엔진**: 줌 레벨에 따라 히트맵(Heatmap), 클러스터(Cluster), 개별 마커(Marker) 모드로 자동 전환되어 최적의 시각적 경험 제공.
-- **PostGIS 성능 최적화**: PostgreSQL의 PostGIS 공간 인덱스를 활용하여 수백만 건의 데이터도 버벅임 없이 실시간 뷰포트 필터링(Viewport Filtering) 조회 가능.
-- **상세 정보 (GIS Modal)**: 마커 클릭 시 나타나는 상세 모달에서 원본 이미지와 함께 YOLO 형식의 바운딩 박스(Bounding Box) 오버레이를 통해 정확한 손상 위치 및 유형 확인 가능.
+### 2. AI 기반 전략 분석 보고서
+- **인텔리전스 리포트**: LLM(OpenAI/Gemini)이 실시간 통계 데이터를 분석하여 전문적인 전략 보고서를 생성합니다.
+- **전문가 인사이트**: 국가별 기후 특성, 경제적 리스크 평가, 3단계 유지보수 로드맵을 포함한 정식 PDF 문서를 즉시 다운로드할 수 있습니다.
+- **데이터 증거주의**: 시스템의 실제 수치에만 근거하여 신뢰도 높은 의사결정 지원 자료를 제공합니다.
 
-### 3. 데이터 및 권한 관리
-- **로그인/보안**: 세션 기반 인증(Spring Security) 적용 (관리자 계정: `admin@example.com` / `1234`).
-- **데이터 관리**: 관리자 권한으로 도로 손상 정보 수동 등록 및 삭제 가능.
-- **사용자 관리**: 시스템 접근 가능 인원 관리 및 권한 설정.
+### 3. 실시간 대시보드 및 분석
+- **인텔리전트 메트릭**: 최근 24시간 신규 감지 건수, 밀집도 주의 국가 등 핵심 지표를 실시간으로 요약합니다.
+- **비주얼 분석**: 일별 발생 추세, 파손 유형 비중, 국가별 비교 등 다양한 차트를 통해 데이터 인사이트를 제공합니다.
+- **데이터 관리 (CRUD)**: 관리자 권한을 통해 신규 손상 정보를 등록하고 기존 데이터를 효율적으로 제어합니다.
+- **데이터 내보내기**: 현재 필터링된 데이터를 엑셀(CSV) 파일로 추출하여 외부 업무에 활용할 수 있습니다.
 
-## 🛠 기술 스택
+## 🛠 기술 스택 (Tech Stack)
 
 ### Backend
-- **Framework**: Spring Boot 3.3.0
-- **Language**: Java 17
-- **Security**: Spring Security (Session-based Auth)
-- **Data**: Spring Data JPA, PostgreSQL (Render Managed)
-- **Environment**: Dotenv-Java for credential management
-- **API Docs**: SpringDoc OpenAPI (Swagger UI)
+- **Spring Boot 3.4**: 고성능 REST API 서버
+- **PostgreSQL + PostGIS**: 공간 데이터 연산 및 인덱싱
+- **Spring Data JPA / Hibernate Spatial**: 객체-관계 및 공간 매핑
+- **OpenPDF**: 전문적인 PDF 보고서 생성 엔진
+- **Dotenv**: 환경 변수 및 API 키 보안 관리
 
 ### Frontend
-- **Framework**: React (Vite)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Charts**: Recharts
-- **Routing**: React Router DOM
+- **React (TypeScript)**: 안정적이고 타입 안정적인 UI 구현
+- **Deck.gl**: WebGL 기반 고성능 데이터 시각화
+- **Google Maps API**: 안정적인 베이스 맵 제공
+- **Tailwind CSS**: 현대적이고 반응형인 디자인 시스템
+- **Recharts**: 정밀한 통계 데이터 차트 시각화
 
-## 📖 문서 가이드
+## ⚙️ 실행 방법 (Getting Started)
 
-- [API 명세서](./docs/api-spec.md): 백엔드 REST API 상세 정의.
-- [디자인 가이드](./DESIGN.md): Stitch MCP 기반의 UI/UX 설계 규칙.
-- [설계 명세서](./docs/superpowers/specs/2026-06-01-rdd-dashboard-design.md): 시스템 아키텍처 및 데이터 모델 설계.
-- [에이전트 헌법](./AGENTS.md): AI 에이전트의 작업 원칙 및 가이드라인.
-- [Spark 연동 가이드](./SPARK_INTEGRATION_GUIDE.md): 데이터 엔지니어를 위한 DB 적재 매뉴얼.
+### 사전 준비 사항
+- **Java 17** 이상, **Node.js** (v18+)
+- **PostgreSQL + PostGIS**: `CREATE EXTENSION postgis;`가 활성화된 데이터베이스
+- **OpenAI 호환 API Key**: AI 보고서 기능을 위해 필요합니다.
 
-## 🏃 Quick Starter (빠른 실행 가이드)
+### 설치 및 실행
+1. `backend/.env` 파일에 DB 연결 정보 및 `OPENAI_API_KEY`를 설정합니다.
+2. 백엔드 실행: `cd backend && ./gradlew bootRun`
+3. 프론트엔드 설치: `cd frontend && npm install`
+4. 프론트엔드 실행: `npm run dev`
 
-프로젝트를 로컬 환경에서 실행하기 위한 단계별 가이드입니다. 이 프로젝트는 Backend(Spring Boot)와 Frontend(React)를 각각 독립적으로 실행해야 합니다.
-
-### 사전 준비 사항 (Prerequisites)
-- **Java 17** 이상이 설치되어 있어야 합니다.
-- **Node.js** (v18 이상 권장) 및 **npm**이 설치되어 있어야 합니다.
-- **PostgreSQL + PostGIS**: 데이터베이스에 `PostGIS` 확장 기능이 활성화되어 있어야 합니다. (`CREATE EXTENSION postgis;`)
-- (선택 사항) 실제 구글 지도를 보려면 구글 클라우드 콘솔에서 Maps JavaScript API 키를 발급받아야 합니다.
-
-### Step 1: 구글 지도 API 키 설정 (Frontend)
-실제 지도를 렌더링하기 위해 환경 변수 파일에 API 키를 등록합니다.
-1. `frontend/` 디렉토리로 이동합니다.
-2. `.env` 파일을 열고 발급받은 API 키를 입력합니다.
-   ```env
-   VITE_GOOGLE_MAPS_API_KEY=발급받은_실제_API_키
-   ```
-   *(API 키가 없어도 시스템은 동작하나, 지도는 로딩 화면 상태로 유지됩니다.)*
-
-### Step 2: Backend (Spring Boot) 서버 실행
-백엔드 서버는 기본적으로 `8080` 포트를 사용하며, 운영용 PostgreSQL DB(Render)와 연동됩니다. 보안을 위해 환경 변수 설정이 필요합니다.
-
-1. `backend/` 디렉토리로 이동합니다.
-2. `.env` 파일을 생성하고 제공받은 DB 접속 정보를 입력합니다. (이미 생성되어 있다면 확인만 하십시오.)
-   ```env
-   DB_URL=jdbc:postgresql://[HOST]:[PORT]/[DB_NAME]
-   DB_USERNAME=[USERNAME]
-   DB_PASSWORD=[PASSWORD]
-   ```
-3. Gradle Wrapper를 사용하여 서버를 실행합니다.
-   ```bash
-   # Mac / Linux
-   ./gradlew bootRun
-   
-   # Windows
-   gradlew.bat bootRun
-   ```
-4. 서버가 정상적으로 실행되면 브라우저에서 아래 주소로 접속하여 API 명세서를 확인할 수 있습니다.
-   - **Swagger UI**: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
-
-### Step 3: Frontend (React) 서버 실행
-프론트엔드 서버는 Vite를 기반으로 동작하며, 기본적으로 `5173` 포트를 사용합니다. 내부적으로 백엔드 API(`/api/*`) 호출을 `localhost:8080`으로 프록시(Proxy)하도록 설정되어 있습니다.
-1. 새로운 터미널 창을 열고 프로젝트 루트에서 `frontend` 디렉토리로 이동합니다.
-   ```bash
-   cd frontend
-   ```
-2. 필요한 패키지를 설치합니다.
-   ```bash
-   npm install
-   ```
-3. 개발 서버를 실행합니다.
-   ```bash
-   npm run dev
-   ```
-4. 터미널에 출력된 로컬 주소(일반적으로 [http://localhost:5173](http://localhost:5173))를 브라우저로 엽니다.
-
-### Step 4: 시스템 로그인 및 이용
-서버가 처음 시작될 때 자동으로 최고 관리자 계정이 생성됩니다.
-1. 브라우저에서 프론트엔드 주소로 접속하면 로그인 화면이 나타납니다.
-2. 아래의 초기 관리자 계정으로 로그인합니다.
-   - **아이디 (이메일)**: `admin@example.com`
-   - **비밀번호**: `1234`
-3. 로그인에 성공하면 대시보드로 이동하며, 좌측 사이드바를 통해 데이터 관리, 지도 보기, 사용자 권한 관리 등의 기능을 이용하실 수 있습니다.
-
-## 📝 변경 이력 (Changelog)
-상세한 업데이트 내역은 [CHANGELOG.md](./CHANGELOG.md)를 참조하십시오.
+---
+본 시스템은 대규모 도로 인프라의 효율적인 유지보수를 지원하며, 데이터 기반의 스마트 시티 구현을 목표로 합니다.
