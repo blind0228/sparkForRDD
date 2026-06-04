@@ -46,9 +46,16 @@ export const MapMode: React.FC<MapModeProps> = () => {
           data: clusters,
           getPosition: (d: any) => [d.longitude, d.latitude],
           getWeight: (d: any) => d.count,
-          radiusPixels: 80, // 더 넓게 퍼지도록 반경 확대
-          intensity: 2,    // 색상 농도 강화
-          threshold: 0.03,  // 더 미세한 데이터도 표시
+          radiusPixels: 50, // 개별 점의 크기는 줄임
+          intensity: 4,    // 중첩 시 색상이 붉게 변하는 강도 대폭 강화
+          threshold: 0.01,  // 아주 미세한 데이터도 시각화
+          colorRange: [
+            [0, 88, 190],   // 파랑 (저밀도)
+            [0, 196, 159],  // 청록
+            [255, 187, 40], // 노랑
+            [230, 81, 0],   // 주황
+            [183, 28, 28]   // 빨강 (고밀도)
+          ]
         }) as any
       );
     }
@@ -87,10 +94,9 @@ export const MapMode: React.FC<MapModeProps> = () => {
 
     try {
       if (currentZoom < 10) {
-        // 줌 레벨이 낮거나 중간일 때: 클러스터 요청 (히트맵 중단으로 인한 대체)
-        let gridSize = 0.1;
-        if (currentZoom < 5) gridSize = 15.0;
-        else gridSize = Math.max(1.0, Math.pow(2, 11 - currentZoom) * 0.5);
+        // 줌 레벨이 낮을 때: 히트맵 데이터 밀도를 대폭 높임 (0.5~2.0 수준으로 세밀하게)
+        let gridSize = 0.8;
+        if (currentZoom >= 5) gridSize = 0.3; 
 
         const url = `/api/damages/clusters?minLat=${finalMinLat}&minLng=${finalMinLng}&maxLat=${finalMaxLat}&maxLng=${finalMaxLng}&gridSize=${gridSize}`;
         const res = await fetch(url);
