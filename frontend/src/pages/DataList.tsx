@@ -1,14 +1,5 @@
 import React, { useState, useEffect } from 'react';
-
-interface RoadDamage {
-  id: number;
-  damageType: string;
-  latitude: number;
-  longitude: number;
-  imageX: number;
-  imageY: number;
-  capturedAt: string;
-}
+import type { RoadDamageMarker } from '../types/damage';
 
 interface DataListProps {
 }
@@ -20,7 +11,7 @@ export const DataList: React.FC<DataListProps> = () => {
   const [filterType, setFilterType] = useState('ALL');
   
   // 서버 사이드 페이징 상태
-  const [damages, setDamages] = useState<RoadDamage[]>([]);
+  const [damages, setDamages] = useState<RoadDamageMarker[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
@@ -31,14 +22,6 @@ export const DataList: React.FC<DataListProps> = () => {
   const handleSort = (field: string) => { console.log('Sorting by', field); };
   const getSortIcon = (_field: string) => 'unfold_more';
 
-  // 대미지 타입 한국어 매핑
-  const typeMap: Record<string, string> = {
-    D00: '종방향 균열 (D00)',
-    D10: '횡방향 균열 (D10)',
-    D20: '포트홀 (D20)',
-    D40: '심각한 파손 (D40)',
-  };
-
   useEffect(() => {
     const fetchDamages = async () => {
       setLoading(true);
@@ -48,23 +31,15 @@ export const DataList: React.FC<DataListProps> = () => {
         queryParams.append('size', itemsPerPage.toString());
         
         if (filterType !== 'ALL') {
-          queryParams.append('damageType', filterType);
+          queryParams.append('country', filterType); // 현재 백엔드는 country 필터만 지원하므로 매핑
         }
 
         const res = await fetch(`/api/damages?${queryParams.toString()}`);
         if (res.ok) {
           const data = await res.json();
-          // 백엔드가 Page 객체를 반환한다고 가정 (content, totalPages, totalElements)
-          if (data.content) {
-            setDamages(data.content);
-            setTotalPages(data.totalPages);
-            setTotalElements(data.totalElements);
-          } else {
-             // Fallback
-             setDamages(data);
-             setTotalPages(1);
-             setTotalElements(data.length);
-          }
+          setDamages(data.content || []);
+          setTotalPages(data.totalPages || 1);
+          setTotalElements(data.totalElements || 0);
         }
       } catch (error) {
         console.error('API 로드 오류:', error);
@@ -73,24 +48,23 @@ export const DataList: React.FC<DataListProps> = () => {
       }
     };
     
-    // 로컬 검색어가 있다면, 실제로는 백엔드 검색 API가 필요하지만 
-    // 여기서는 요구사항의 한계상 서버로부터 페이징된 데이터를 가져옵니다.
     fetchDamages();
-  }, [currentPage, filterType, searchTerm]); // searchTerm은 백엔드 구현에 맞춰 추후 추가 필요
+  }, [currentPage, filterType, searchTerm]);
 
   const getPageNumbers = () => {
     const pages = [];
-    for (let i = 1; i <= totalPages; i++) {
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    
+    if (endPage - startPage < maxVisiblePages - 1) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
       pages.push(i);
     }
     return pages;
-  };
-
-  const badgeColors: Record<string, string> = {
-    D00: 'bg-secondary-container text-on-secondary-container',
-    D10: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200',
-    D20: 'bg-primary/10 text-primary',
-    D40: 'bg-error/10 text-error',
   };
 
   return (
@@ -115,7 +89,7 @@ export const DataList: React.FC<DataListProps> = () => {
               setLocalSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-            placeholder="ID, 유형, 좌표 검색..."
+            placeholder="ID, 국가, 좌표 검색..."
             className="w-full pl-9 pr-4 py-sm bg-surface-container-low border border-outline-variant rounded-lg text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none text-on-surface"
           />
         </div>
@@ -130,11 +104,11 @@ export const DataList: React.FC<DataListProps> = () => {
             }}
             className="bg-surface-container-lowest text-xs text-on-surface border border-outline-variant rounded-lg px-md py-sm focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
           >
-            <option value="ALL">모든 손상 유형</option>
-            <option value="D00">D00 (종방향 균열)</option>
-            <option value="D10">D10 (횡방향 균열)</option>
-            <option value="D20">D20 (포트홀)</option>
-            <option value="D40">D40 (심각한 파손)</option>
+            <option value="ALL">모든 국가</option>
+            <option value="Japan">Japan</option>
+            <option value="India">India</option>
+            <option value="China">China</option>
+            <option value="Czech">Czech</option>
           </select>
 
           <button className="px-md py-sm bg-primary text-on-primary rounded-lg font-bold text-xs hover:opacity-90 active:scale-95 flex items-center gap-xs transition-all">
@@ -159,14 +133,8 @@ export const DataList: React.FC<DataListProps> = () => {
                     <span className="material-symbols-outlined text-sm">{getSortIcon('id')}</span>
                   </div>
                 </th>
-                <th
-                  onClick={() => handleSort('damageType')}
-                  className="px-lg py-md cursor-pointer hover:bg-surface-container-high transition-colors select-none"
-                >
-                  <div className="flex items-center gap-xs">
-                    피해 유형
-                    <span className="material-symbols-outlined text-sm">{getSortIcon('damageType')}</span>
-                  </div>
+                <th className="px-lg py-md hover:bg-surface-container-high transition-colors select-none">
+                  국가
                 </th>
                 <th
                   onClick={() => handleSort('latitude')}
@@ -187,15 +155,15 @@ export const DataList: React.FC<DataListProps> = () => {
                   </div>
                 </th>
                 <th className="px-lg py-md hover:bg-surface-container-high transition-colors select-none">
-                  이미지 좌표 (X, Y)
+                  손상 건수
                 </th>
                 <th
-                  onClick={() => handleSort('capturedAt')}
+                  onClick={() => handleSort('createdAt')}
                   className="px-lg py-md cursor-pointer hover:bg-surface-container-high transition-colors select-none"
                 >
                   <div className="flex items-center gap-xs">
                     기록 시간
-                    <span className="material-symbols-outlined text-sm">{getSortIcon('capturedAt')}</span>
+                    <span className="material-symbols-outlined text-sm">{getSortIcon('createdAt')}</span>
                   </div>
                 </th>
                 <th className="px-lg py-md">동작</th>
@@ -204,7 +172,7 @@ export const DataList: React.FC<DataListProps> = () => {
             <tbody className="divide-y divide-outline-variant">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-lg py-xl text-center text-xs text-outline">
+                  <td colSpan={7} className="px-lg py-xl text-center text-xs text-outline">
                     데이터를 불러오는 중입니다...
                   </td>
                 </tr>
@@ -213,19 +181,15 @@ export const DataList: React.FC<DataListProps> = () => {
                   <tr key={damage.id} className="hover:bg-primary-container/5 transition-colors">
                     <td className="px-lg py-md font-mono text-xs font-semibold text-primary">#{damage.id}</td>
                     <td className="px-lg py-md">
-                      <span
-                        className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${
-                          badgeColors[damage.damageType] || 'bg-slate-100 text-slate-800'
-                        }`}
-                      >
-                        {typeMap[damage.damageType] || damage.damageType}
+                      <span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-secondary-container text-on-secondary-container">
+                        {damage.country}
                       </span>
                     </td>
                     <td className="px-lg py-md font-mono text-xs text-on-surface">{damage.latitude.toFixed(6)}</td>
                     <td className="px-lg py-md font-mono text-xs text-on-surface">{damage.longitude.toFixed(6)}</td>
-                    <td className="px-lg py-md font-mono text-xs text-on-surface">{damage.imageX}, {damage.imageY}</td>
+                    <td className="px-lg py-md font-mono text-xs text-on-surface">{damage.totalDamageCount}건</td>
                     <td className="px-lg py-md text-xs text-on-surface-variant">
-                      {new Date(damage.capturedAt).toLocaleString('ko-KR')}
+                      {new Date(damage.createdAt).toLocaleString('ko-KR')}
                     </td>
                     <td className="px-lg py-md">
                       <button className="text-primary hover:underline text-xs font-bold">상세조회</button>
@@ -234,7 +198,7 @@ export const DataList: React.FC<DataListProps> = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-lg py-xl text-center text-xs text-outline">
+                  <td colSpan={7} className="px-lg py-xl text-center text-xs text-outline">
                     일치하는 데이터가 없습니다.
                   </td>
                 </tr>
