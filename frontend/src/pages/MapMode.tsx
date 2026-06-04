@@ -43,10 +43,11 @@ export const MapMode: React.FC<MapModeProps> = () => {
     const maxLng = ne.lng();
 
     try {
-      if (currentZoom < 13) {
-        // 줌 레벨이 낮을 때: 클러스터 요청
-        // 줌 레벨에 따라 그리드 크기 조절 (줌이 낮을수록 그리드 크게)
-        const gridSize = Math.pow(2, 14 - currentZoom) * 0.01;
+      if (currentZoom < 16) {
+        // 줌 레벨이 낮거나 중간일 때: 클러스터 요청
+        // 그리드 크기를 훨씬 공격적으로 설정하여 더 넓은 범위로 합침
+        // 줌 1일 때 약 40도, 줌 10일 때 약 0.08도 수준으로 조정
+        const gridSize = Math.pow(2, 12 - currentZoom) * 0.1;
         const url = `/api/damages/clusters?minLat=${minLat}&minLng=${minLng}&maxLat=${maxLat}&maxLng=${maxLng}&gridSize=${gridSize}`;
         const res = await fetch(url);
         if (res.ok) {
@@ -55,7 +56,7 @@ export const MapMode: React.FC<MapModeProps> = () => {
           setMarkers([]);
         }
       } else {
-        // 줌 레벨이 높을 때: 개별 마커 요청
+        // 아주 많이 확대했을 때만 개별 마커 (줌 16 이상)
         const url = `/api/damages/markers?minLat=${minLat}&minLng=${minLng}&maxLat=${maxLat}&maxLng=${maxLng}&limit=1000`;
         const res = await fetch(url);
         if (res.ok) {
@@ -329,17 +330,22 @@ export const MapMode: React.FC<MapModeProps> = () => {
                       key={`cluster-${index}`}
                       position={{ lat: cluster.latitude, lng: cluster.longitude }}
                       label={{
-                        text: cluster.count > 999 ? `${(cluster.count / 1000).toFixed(1)}k` : cluster.count.toString(),
+                        text: cluster.count > 999999 
+                          ? `${(cluster.count / 1000000).toFixed(1)}M` 
+                          : cluster.count > 999 
+                            ? `${(cluster.count / 1000).toFixed(1)}k` 
+                            : cluster.count.toString(),
                         color: 'white',
-                        fontSize: '12px',
+                        fontSize: '11px',
                         fontWeight: 'bold',
                       }}
                       icon={{
                         path: google.maps.SymbolPath.CIRCLE,
-                        fillColor: '#0058be',
-                        fillOpacity: 0.8,
-                        strokeWeight: 0,
-                        scale: 24,
+                        fillColor: cluster.count > 10000 ? '#b71c1c' : cluster.count > 1000 ? '#e65100' : '#0058be',
+                        fillOpacity: 0.9,
+                        strokeWeight: 2,
+                        strokeColor: '#FFFFFF',
+                        scale: cluster.count > 1000 ? 30 : 22,
                       }}
                     />
                   ))}
