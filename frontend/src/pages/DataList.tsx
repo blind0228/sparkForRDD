@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import type { RoadDamageMarker } from '../types/damage';
 
+import { DamageDetailModal } from '../components/DamageDetailModal';
+
 interface DataListProps {
 }
 
@@ -9,6 +11,11 @@ export const DataList: React.FC<DataListProps> = () => {
   const searchTerm = localSearchTerm;
 
   const [filterType, setFilterType] = useState('ALL');
+  const [countries, setCountries] = useState<string[]>([]);
+  
+  // 상세 모달 상태
+  const [selectedMarker, setSelectedMarker] = useState<RoadDamageMarker | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
   // 서버 사이드 페이징 상태
   const [damages, setDamages] = useState<RoadDamageMarker[]>([]);
@@ -21,6 +28,21 @@ export const DataList: React.FC<DataListProps> = () => {
   // 정렬용 더미 함수 (추후 서버 연동 필요)
   const handleSort = (field: string) => { console.log('Sorting by', field); };
   const getSortIcon = (_field: string) => 'unfold_more';
+
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const res = await fetch('/api/damages/stats/countries');
+        if (res.ok) {
+          const data = await res.json();
+          setCountries(data.map((c: any) => c.country));
+        }
+      } catch (error) {
+        console.error('Failed to fetch countries:', error);
+      }
+    };
+    fetchCountries();
+  }, []);
 
   useEffect(() => {
     const fetchDamages = async () => {
@@ -138,10 +160,9 @@ export const DataList: React.FC<DataListProps> = () => {
             className="bg-surface-container-lowest text-xs text-on-surface border border-outline-variant rounded-lg px-md py-sm focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
           >
             <option value="ALL">모든 국가</option>
-            <option value="Japan">Japan</option>
-            <option value="India">India</option>
-            <option value="China">China</option>
-            <option value="Czech">Czech</option>
+            {countries.map(c => (
+              <option key={c} value={c}>{c}</option>
+            ))}
           </select>
 
           <button 
@@ -190,7 +211,17 @@ export const DataList: React.FC<DataListProps> = () => {
                     <td className="px-lg py-md font-mono text-xs text-on-surface">{damage.longitude.toFixed(6)}</td>
                     <td className="px-lg py-md font-mono text-xs text-on-surface">{damage.totalDamageCount}건</td>
                     <td className="px-lg py-md text-xs text-on-surface-variant">{new Date(damage.createdAt).toLocaleString('ko-KR')}</td>
-                    <td className="px-lg py-md"><button className="text-primary hover:underline text-xs font-bold">상세조회</button></td>
+                    <td className="px-lg py-md">
+                      <button 
+                        onClick={() => {
+                          setSelectedMarker(damage);
+                          setIsModalOpen(true);
+                        }}
+                        className="text-primary hover:underline text-xs font-bold"
+                      >
+                        상세조회
+                      </button>
+                    </td>
                   </tr>
                 ))
               ) : (
@@ -219,6 +250,12 @@ export const DataList: React.FC<DataListProps> = () => {
           </div>
         )}
       </div>
+
+      <DamageDetailModal 
+        isOpen={isModalOpen}
+        marker={selectedMarker}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 };
