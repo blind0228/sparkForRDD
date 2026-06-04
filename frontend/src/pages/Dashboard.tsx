@@ -150,7 +150,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
             <div className="p-2 bg-primary/10 text-primary rounded-lg flex items-center justify-center">
               <span className="material-symbols-outlined">warning</span>
             </div>
-            <span className="text-success text-[11px] font-bold bg-green-100 dark:bg-green-950 px-2 py-0.5 rounded-full">
+            <span className="text-primary text-[11px] font-bold bg-primary/10 px-2 py-0.5 rounded-full">
               신규 감지 (24h)
             </span>
           </div>
