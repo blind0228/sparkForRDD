@@ -57,7 +57,8 @@ export const MapMode: React.FC<MapModeProps> = () => {
 
     try {
       if (currentZoom < 10) {
-        const gridSize = isWorldView ? 5.0 : Math.pow(2, 12 - currentZoom) * 0.2;
+        // 줌 레벨이 낮을 때: 히트맵 데이터
+        const gridSize = isWorldView ? 10.0 : Math.max(0.2, Math.pow(2, 11 - currentZoom) * 0.4);
         const url = `/api/damages/clusters?minLat=${finalMinLat}&minLng=${finalMinLng}&maxLat=${finalMaxLat}&maxLng=${finalMaxLng}&gridSize=${gridSize}`;
         const res = await fetch(url);
         if (res.ok) {
@@ -323,6 +324,10 @@ export const MapMode: React.FC<MapModeProps> = () => {
               ...mapOptions,
               minZoom: 3,
               maxZoom: 22,
+              restriction: {
+                latLngBounds: { north: 85, south: -85, west: -180, east: 180 },
+                strictBounds: false,
+              },
             }}
             onClick={() => setSelectedMarker(null)}
             onLoad={(map) => { mapRef.current = map; }}
