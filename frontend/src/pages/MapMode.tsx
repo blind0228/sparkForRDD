@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow, MarkerClusterer } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker, InfoWindow, MarkerClusterer, HeatmapLayer } from '@react-google-maps/api';
 import { useSearchParams } from 'react-router-dom';
 import type { RoadDamageMarker } from '../types/damage';
 import { DamageDetailModal } from '../components/DamageDetailModal';
@@ -12,6 +12,7 @@ export const MapMode: React.FC<MapModeProps> = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [markers, setMarkers] = useState<RoadDamageMarker[]>([]);
   const [clusters, setClusters] = useState<{latitude: number, longitude: number, count: number}[]>([]);
+  const [heatmapData, setHeatmapData] = useState<{lat: number, lng: number}[]>([]);
   const [mapCenter, setMapCenter] = useState({ lat: 37.53, lng: 126.98 });
   const [zoom, setZoom] = useState(12);
   const [searchQuery, setSearchQuery] = useState('');
@@ -22,6 +23,7 @@ export const MapMode: React.FC<MapModeProps> = () => {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
+    libraries: ['visualization'] as any,
   });
 
   // 지도 영역 변경 시 데이터 페칭
@@ -43,10 +45,19 @@ export const MapMode: React.FC<MapModeProps> = () => {
     const maxLng = ne.lng();
 
     try {
-      if (currentZoom < 16) {
-        // 줌 레벨이 낮거나 중간일 때: 클러스터 요청
-        // 그리드 크기를 훨씬 공격적으로 설정하여 더 넓은 범위로 합침
-        // 줌 1일 때 약 40도, 줌 10일 때 약 0.08도 수준으로 조정
+      if (currentZoom < 10) {
+        // 줌 레벨이 아주 낮을 때: 히트맵 데이터
+        const gridSize = Math.pow(2, 12 - currentZoom) * 0.2;
+        const url = `/api/damages/clusters?minLat=${minLat}&minLng=${minLng}&maxLat=${maxLat}&maxLng=${maxLng}&gridSize=${gridSize}`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          setHeatmapData(data.map((c: any) => ({ lat: c.latitude, lng: c.longitude })));
+          setClusters([]);
+          setMarkers([]);
+        }
+      } else if (currentZoom < 16) {
+        // 줌 레벨이 중간일 때: 클러스터 요청
         const gridSize = Math.pow(2, 12 - currentZoom) * 0.1;
         const url = `/api/damages/clusters?minLat=${minLat}&minLng=${minLng}&maxLat=${maxLat}&maxLng=${maxLng}&gridSize=${gridSize}`;
         const res = await fetch(url);
@@ -54,15 +65,17 @@ export const MapMode: React.FC<MapModeProps> = () => {
           const data = await res.json();
           setClusters(data);
           setMarkers([]);
+          setHeatmapData([]);
         }
       } else {
-        // 아주 많이 확대했을 때만 개별 마커 (줌 16 이상)
+        // 아주 많이 확대했을 때: 개별 마커 (줌 16 이상)
         const url = `/api/damages/markers?minLat=${minLat}&minLng=${minLng}&maxLat=${maxLat}&maxLng=${maxLng}&limit=1000`;
         const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
           setMarkers(data);
           setClusters([]);
+          setHeatmapData([]);
         }
       }
     } catch (error) {
@@ -226,9 +239,11 @@ export const MapMode: React.FC<MapModeProps> = () => {
             <div className="flex justify-between items-baseline">
               <span className="text-xs text-on-surface-variant">발견된 손상 건수:</span>
               <span className="font-display text-lg font-bold text-on-surface">
-                {zoom < 13 
-                  ? clusters.reduce((acc, c) => acc + c.count, 0).toLocaleString() 
-                  : markers.length.toLocaleString()} <span className="text-xs font-normal text-outline">건</span>
+                {(zoom < 16 
+                  ? (clusters.length > 0 
+                      ? clusters.reduce((acc, c) => acc + c.count, 0) 
+                      : heatmapData.length * 5) 
+                  : markers.length).toLocaleString()} <span className="text-xs font-normal text-outline">건</span>
               </span>
             </div>
           </div>
@@ -303,6 +318,16 @@ export const MapMode: React.FC<MapModeProps> = () => {
             onLoad={(map) => { mapRef.current = map; }}
             onIdle={handleIdle}
           >
+            {heatmapData.length > 0 && (
+              <HeatmapLayer
+                data={heatmapData.map(d => new google.maps.LatLng(d.lat, d.lng))}
+                options={{
+                  radius: 20,
+                  opacity: 0.6,
+                }}
+              />
+            )}
+            
             <MarkerClusterer
               options={{
                 imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m',
