@@ -27,9 +27,16 @@ export const MapMode: React.FC<MapModeProps> = () => {
   });
 
   const heatmapPoints = useMemo(() => {
-    if (!window.google || heatmapData.length === 0) return [];
-    return heatmapData.map(d => new google.maps.LatLng(d.lat, d.lng));
-  }, [heatmapData]);
+    if (typeof window === 'undefined' || !window.google || !window.google.maps || heatmapData.length === 0) {
+      return [];
+    }
+    try {
+      return heatmapData.map(d => new google.maps.LatLng(d.lat, d.lng));
+    } catch (e) {
+      console.error('Heatmap point creation failed:', e);
+      return [];
+    }
+  }, [heatmapData, isLoaded]); // isLoaded 의존성 추가로 로드 완료 후 재계산 보장
 
   // 지도 영역 변경 시 데이터 페칭
   const handleIdle = async () => {
@@ -357,14 +364,14 @@ export const MapMode: React.FC<MapModeProps> = () => {
                       position={{ lat: marker.latitude, lng: marker.longitude }}
                       onClick={() => handleMarkerClick(marker)}
                       clusterer={clusterer}
-                      icon={{
+                      icon={window.google && window.google.maps ? {
                         path: google.maps.SymbolPath.CIRCLE,
                         fillColor: '#0058be',
                         fillOpacity: 1,
                         strokeWeight: 2,
                         strokeColor: '#FFFFFF',
                         scale: 8,
-                      }}
+                      } : undefined}
                     />
                   ))}
 
@@ -383,14 +390,14 @@ export const MapMode: React.FC<MapModeProps> = () => {
                         fontSize: '11px',
                         fontWeight: 'bold',
                       }}
-                      icon={{
+                      icon={window.google && window.google.maps ? {
                         path: google.maps.SymbolPath.CIRCLE,
                         fillColor: cluster.count > 10000 ? '#b71c1c' : cluster.count > 1000 ? '#e65100' : '#0058be',
                         fillOpacity: 0.9,
                         strokeWeight: 2,
                         strokeColor: '#FFFFFF',
                         scale: cluster.count > 1000 ? 30 : 22,
-                      }}
+                      } : undefined}
                     />
                   ))}
                 </>
