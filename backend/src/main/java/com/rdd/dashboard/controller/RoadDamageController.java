@@ -43,7 +43,7 @@ public class RoadDamageController {
         if (country != null && !country.isEmpty()) {
             return roadDamageMarkerRepository.findByCountry(country);
         }
-        return roadDamageMarkerRepository.findAll();
+        return roadDamageMarkerRepository.findRecentMarkers(limit);
     }
 
     @Operation(summary = "도로 손상 클러스터 조회", description = "영역(BBox) 내의 마커들을 그리드 단위로 집계하여 클러스터링된 데이터를 조회합니다.")

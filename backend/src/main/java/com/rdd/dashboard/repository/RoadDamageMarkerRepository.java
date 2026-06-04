@@ -25,6 +25,9 @@ public interface RoadDamageMarkerRepository extends JpaRepository<RoadDamageMark
             "GROUP BY ST_SnapToGrid(geom, ?5)", nativeQuery = true)
     List<Object[]> findClustersInViewport(double minLat, double minLng, double maxLat, double maxLng, double gridSize);
 
+    @Query(value = "SELECT * FROM road_damage_markers ORDER BY id DESC LIMIT ?1", nativeQuery = true)
+    List<RoadDamageMarker> findRecentMarkers(int limit);
+
     @Query("SELECT new com.rdd.dashboard.dto.CountryStatsDto(rm.country, COUNT(rm)) " +
            "FROM RoadDamageMarker rm GROUP BY rm.country")
     List<CountryStatsDto> findCountryStats();
