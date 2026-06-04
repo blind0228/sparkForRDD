@@ -9,6 +9,7 @@ import { MapMode } from './pages/MapMode';
 import { DataList } from './pages/DataList';
 import { AdminData } from './pages/AdminData';
 import { AdminUsers } from './pages/AdminUsers';
+import { Analytics } from './pages/Analytics';
 
 interface UserSession {
   name: string;
@@ -170,6 +171,14 @@ function App() {
           element={
             <ProtectedLayout>
               <DataList />
+            </ProtectedLayout>
+          }
+        />
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedLayout>
+              <Analytics />
             </ProtectedLayout>
           }
         />
