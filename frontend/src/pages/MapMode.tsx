@@ -294,7 +294,11 @@ export const MapMode: React.FC<MapModeProps> = () => {
             mapContainerStyle={{ width: '100%', height: '100%' }}
             center={mapCenter}
             zoom={12}
-            options={mapOptions}
+            options={{
+              ...mapOptions,
+              minZoom: 0,
+              maxZoom: 22,
+            }}
             onClick={() => setSelectedMarker(null)}
             onLoad={(map) => { mapRef.current = map; }}
             onIdle={handleIdle}
