@@ -2,6 +2,7 @@ package com.rdd.dashboard.controller;
 
 import com.rdd.dashboard.dto.CountryStatsDto;
 import com.rdd.dashboard.dto.DamageStatsDto;
+import com.rdd.dashboard.dto.MarkerClusterDto;
 import com.rdd.dashboard.entity.RoadDamageLabel;
 import com.rdd.dashboard.entity.RoadDamageMarker;
 import com.rdd.dashboard.repository.RoadDamageLabelRepository;
@@ -43,6 +44,25 @@ public class RoadDamageController {
             return roadDamageMarkerRepository.findByCountry(country);
         }
         return roadDamageMarkerRepository.findAll();
+    }
+
+    @Operation(summary = "도로 손상 클러스터 조회", description = "영역(BBox) 내의 마커들을 그리드 단위로 집계하여 클러스터링된 데이터를 조회합니다.")
+    @GetMapping("/clusters")
+    public List<MarkerClusterDto> getClusters(
+            @RequestParam Double minLat,
+            @RequestParam Double minLng,
+            @RequestParam Double maxLat,
+            @RequestParam Double maxLng,
+            @RequestParam(defaultValue = "0.1") Double gridSize) {
+        
+        List<Object[]> results = roadDamageMarkerRepository.findClustersInViewport(minLat, minLng, maxLat, maxLng, gridSize);
+        return results.stream()
+                .map(row -> new MarkerClusterDto(
+                        (Double) row[0],
+                        (Double) row[1],
+                        ((Number) row[2]).longValue()
+                ))
+                .toList();
     }
 
     @Operation(summary = "파일별 라벨 조회", description = "이미지 파일명에 해당하는 도로 손상 라벨 목록을 조회합니다.")
