@@ -39,40 +39,39 @@ export const MapMode: React.FC<MapModeProps> = () => {
     const ne = bounds.getNorthEast();
     const sw = bounds.getSouthWest();
 
-    // 전 세계를 볼 때 위경도 범위를 안전한 값으로 캡핑 (-180~180, -85~85)
+    // 전 세계를 볼 때 위경도 범위를 안전한 값으로 캡핑
+    const currentMinLat = Math.max(-85, sw.lat());
+    const currentMaxLat = Math.min(85, ne.lat());
+    
     // 구글 맵이 날짜 변경선을 넘어갈 경우의 처리를 포함
-    const minLat = Math.max(-85, sw.lat());
-    const minLng = sw.lng() < ne.lng() ? sw.lng() : -180;
-    const maxLat = Math.min(85, ne.lat());
-    const maxLng = sw.lng() < ne.lng() ? ne.lng() : 180;
+    const currentMinLng = sw.lng() < ne.lng() ? sw.lng() : -180;
+    const currentMaxLng = sw.lng() < ne.lng() ? ne.lng() : 180;
+    
+    // 줌 레벨이 매우 낮을 때는 전 세계 범위로 고정
+    const isWorldView = currentZoom < 5;
+    const finalMinLng = isWorldView ? -180 : currentMinLng;
+    const finalMaxLng = isWorldView ? 180 : currentMaxLng;
+    const finalMinLat = isWorldView ? -85 : currentMinLat;
+    const finalMaxLat = isWorldView ? 85 : currentMaxLat;
 
     try {
-      if (currentZoom < 5) {
-        // 전 세계 단위 (매우 낮은 줌)
-        const gridSize = 10.0; // 매우 큰 그리드
-        const url = `/api/damages/clusters?minLat=-85&minLng=-180&maxLat=85&maxLng=180&gridSize=${gridSize}`;
+      if (currentZoom < 10) {
+        // 줌 레벨이 낮을 때: 히트맵 데이터
+        const gridSize = isWorldView ? 5.0 : Math.pow(2, 12 - currentZoom) * 0.2;
+        const url = `/api/damages/clusters?minLat=${finalMinLat}&minLng=${finalMinLng}&maxLat=${finalMaxLat}&maxLng=${finalMaxLng}&gridSize=${gridSize}`;
         const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
-          setHeatmapData(data.map((c: any) => ({ lat: c.latitude, lng: c.longitude })));
-          setClusters([]);
-          setMarkers([]);
-        }
-      } else if (currentZoom < 10) {
-        // 국가/대륙 단위
-        const gridSize = Math.pow(2, 12 - currentZoom) * 0.2;
-        const url = `/api/damages/clusters?minLat=${minLat}&minLng=${minLng}&maxLat=${maxLat}&maxLng=${maxLng}&gridSize=${gridSize}`;
-        const res = await fetch(url);
-        if (res.ok) {
-          const data = await res.json();
-          setHeatmapData(data.map((c: any) => ({ lat: c.latitude, lng: c.longitude })));
-          setClusters([]);
-          setMarkers([]);
+          if (Array.isArray(data)) {
+            setHeatmapData(data.map((c: any) => ({ lat: c.latitude, lng: c.longitude })));
+            setClusters([]);
+            setMarkers([]);
+          }
         }
       } else if (currentZoom < 16) {
         // 줌 레벨이 중간일 때: 클러스터 요청
         const gridSize = Math.pow(2, 12 - currentZoom) * 0.1;
-        const url = `/api/damages/clusters?minLat=${minLat}&minLng=${minLng}&maxLat=${maxLat}&maxLng=${maxLng}&gridSize=${gridSize}`;
+        const url = `/api/damages/clusters?minLat=${currentMinLat}&minLng=${currentMinLng}&maxLat=${currentMaxLat}&maxLng=${currentMaxLng}&gridSize=${gridSize}`;
         const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
@@ -82,7 +81,7 @@ export const MapMode: React.FC<MapModeProps> = () => {
         }
       } else {
         // 아주 많이 확대했을 때: 개별 마커 (줌 16 이상)
-        const url = `/api/damages/markers?minLat=${minLat}&minLng=${minLng}&maxLat=${maxLat}&maxLng=${maxLng}&limit=1000`;
+        const url = `/api/damages/markers?minLat=${currentMinLat}&minLng=${currentMinLng}&maxLat=${currentMaxLat}&maxLng=${currentMaxLng}&limit=1000`;
         const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
@@ -319,12 +318,12 @@ export const MapMode: React.FC<MapModeProps> = () => {
           </div>
         ) : (
           <GoogleMap
-            mapContainerStyle={{ width: '100%', height: '100%' }}
+            mapContainerStyle={{ width: '100%', height: '100%', backgroundColor: '#0f172a' }}
             center={mapCenter}
             zoom={12}
             options={{
               ...mapOptions,
-              minZoom: 0,
+              minZoom: 3,
               maxZoom: 22,
             }}
             onClick={() => setSelectedMarker(null)}
