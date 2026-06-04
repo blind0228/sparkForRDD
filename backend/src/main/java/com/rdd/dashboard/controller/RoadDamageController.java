@@ -10,6 +10,9 @@ import com.rdd.dashboard.repository.RoadDamageMarkerRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,6 +29,20 @@ public class RoadDamageController {
     private final RoadDamageMarkerRepository roadDamageMarkerRepository;
     private final RoadDamageLabelRepository roadDamageLabelRepository;
 
+    @Operation(summary = "도로 손상 마커 조회 (페이징)", description = "데이터 목록 페이지를 위한 페이징된 마커 목록을 조회합니다.")
+    @GetMapping
+    public Page<RoadDamageMarker> getPaginatedMarkers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String country) {
+        
+        PageRequest pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        if (country != null && !country.isEmpty()) {
+            return roadDamageMarkerRepository.findByCountry(country, pageable);
+        }
+        return roadDamageMarkerRepository.findAll(pageable);
+    }
+
     @Operation(summary = "도로 손상 마커 조회", description = "영역(BBox), 국가별 또는 전체 도로 손상 마커를 조회합니다.")
     @GetMapping("/markers")
     public List<RoadDamageMarker> getMarkers(
@@ -41,7 +58,7 @@ public class RoadDamageController {
         }
         
         if (country != null && !country.isEmpty()) {
-            return roadDamageMarkerRepository.findByCountry(country);
+            return roadDamageMarkerRepository.findByCountry(country, PageRequest.of(0, limit)).getContent();
         }
         return roadDamageMarkerRepository.findRecentMarkers(limit);
     }

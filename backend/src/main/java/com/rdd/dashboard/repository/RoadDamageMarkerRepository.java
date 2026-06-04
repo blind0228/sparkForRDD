@@ -2,6 +2,8 @@ package com.rdd.dashboard.repository;
 
 import com.rdd.dashboard.dto.CountryStatsDto;
 import com.rdd.dashboard.entity.RoadDamageMarker;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -10,7 +12,8 @@ import java.util.List;
 
 @Repository
 public interface RoadDamageMarkerRepository extends JpaRepository<RoadDamageMarker, Long> {
-    List<RoadDamageMarker> findByCountry(String country);
+    Page<RoadDamageMarker> findByCountry(String country, Pageable pageable);
+    Page<RoadDamageMarker> findAll(Pageable pageable);
 
     @Query(value = "SELECT * FROM road_damage_markers " +
             "WHERE geom && ST_MakeEnvelope(?2, ?1, ?4, ?3, 4326) " +
