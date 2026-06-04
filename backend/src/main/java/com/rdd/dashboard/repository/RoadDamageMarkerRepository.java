@@ -15,17 +15,19 @@ public interface RoadDamageMarkerRepository extends JpaRepository<RoadDamageMark
     Page<RoadDamageMarker> findByCountry(String country, Pageable pageable);
     Page<RoadDamageMarker> findAll(Pageable pageable);
 
-    @Query(value = "SELECT * FROM road_damage_markers " +
-            "WHERE geom && ST_MakeEnvelope(?2, ?1, ?4, ?3, 4326) " +
+    @Query(value = "SELECT m.* FROM road_damage_markers m " +
+            "WHERE m.geom && ST_MakeEnvelope(?2, ?1, ?4, ?3, 4326) " +
+            "AND EXISTS (SELECT 1 FROM world_landmask l WHERE ST_Intersects(m.geom, l.geom)) " +
             "LIMIT ?5", nativeQuery = true)
     List<RoadDamageMarker> findMarkersInViewport(double minLat, double minLng, double maxLat, double maxLng, int limit);
 
-    @Query(value = "SELECT ST_Y(ST_Centroid(ST_Collect(geom))) as latitude, " +
-            "ST_X(ST_Centroid(ST_Collect(geom))) as longitude, " +
+    @Query(value = "SELECT ST_Y(ST_Centroid(ST_Collect(m.geom))) as latitude, " +
+            "ST_X(ST_Centroid(ST_Collect(m.geom))) as longitude, " +
             "COUNT(*) as count " +
-            "FROM road_damage_markers " +
-            "WHERE geom && ST_MakeEnvelope(?2, ?1, ?4, ?3, 4326) " +
-            "GROUP BY ST_SnapToGrid(geom, ?5)", nativeQuery = true)
+            "FROM road_damage_markers m " +
+            "WHERE m.geom && ST_MakeEnvelope(?2, ?1, ?4, ?3, 4326) " +
+            "AND EXISTS (SELECT 1 FROM world_landmask l WHERE ST_Intersects(m.geom, l.geom)) " +
+            "GROUP BY ST_SnapToGrid(m.geom, ?5)", nativeQuery = true)
     List<Object[]> findClustersInViewport(double minLat, double minLng, double maxLat, double maxLng, double gridSize);
 
     @Query(value = "SELECT * FROM road_damage_markers ORDER BY id DESC LIMIT ?1", nativeQuery = true)
