@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow, MarkerClusterer, HeatmapLayer } from '@react-google-maps/api';
 import { useSearchParams } from 'react-router-dom';
 import type { RoadDamageMarker } from '../types/damage';
@@ -26,28 +26,29 @@ export const MapMode: React.FC<MapModeProps> = () => {
     libraries: ['visualization'] as any,
   });
 
+  const heatmapPoints = useMemo(() => {
+    if (!window.google || heatmapData.length === 0) return [];
+    return heatmapData.map(d => new google.maps.LatLng(d.lat, d.lng));
+  }, [heatmapData]);
+
   // 지도 영역 변경 시 데이터 페칭
   const handleIdle = async () => {
     if (!mapRef.current) return;
 
-    const bounds = mapRef.current.getBounds();
     const currentZoom = mapRef.current.getZoom() || 12;
     setZoom(currentZoom);
 
+    const bounds = mapRef.current.getBounds();
     if (!bounds) return;
 
     const ne = bounds.getNorthEast();
     const sw = bounds.getSouthWest();
 
-    // 전 세계를 볼 때 위경도 범위를 안전한 값으로 캡핑
     const currentMinLat = Math.max(-85, sw.lat());
     const currentMaxLat = Math.min(85, ne.lat());
-    
-    // 구글 맵이 날짜 변경선을 넘어갈 경우의 처리를 포함
     const currentMinLng = sw.lng() < ne.lng() ? sw.lng() : -180;
     const currentMaxLng = sw.lng() < ne.lng() ? ne.lng() : 180;
     
-    // 줌 레벨이 매우 낮을 때는 전 세계 범위로 고정
     const isWorldView = currentZoom < 5;
     const finalMinLng = isWorldView ? -180 : currentMinLng;
     const finalMaxLng = isWorldView ? 180 : currentMaxLng;
@@ -56,7 +57,6 @@ export const MapMode: React.FC<MapModeProps> = () => {
 
     try {
       if (currentZoom < 10) {
-        // 줌 레벨이 낮을 때: 히트맵 데이터
         const gridSize = isWorldView ? 5.0 : Math.pow(2, 12 - currentZoom) * 0.2;
         const url = `/api/damages/clusters?minLat=${finalMinLat}&minLng=${finalMinLng}&maxLat=${finalMaxLat}&maxLng=${finalMaxLng}&gridSize=${gridSize}`;
         const res = await fetch(url);
@@ -69,7 +69,6 @@ export const MapMode: React.FC<MapModeProps> = () => {
           }
         }
       } else if (currentZoom < 16) {
-        // 줌 레벨이 중간일 때: 클러스터 요청
         const gridSize = Math.pow(2, 12 - currentZoom) * 0.1;
         const url = `/api/damages/clusters?minLat=${currentMinLat}&minLng=${currentMinLng}&maxLat=${currentMaxLat}&maxLng=${currentMaxLng}&gridSize=${gridSize}`;
         const res = await fetch(url);
@@ -80,7 +79,6 @@ export const MapMode: React.FC<MapModeProps> = () => {
           setHeatmapData([]);
         }
       } else {
-        // 아주 많이 확대했을 때: 개별 마커 (줌 16 이상)
         const url = `/api/damages/markers?minLat=${currentMinLat}&minLng=${currentMinLng}&maxLat=${currentMaxLat}&maxLng=${currentMaxLng}&limit=1000`;
         const res = await fetch(url);
         if (res.ok) {
@@ -330,12 +328,12 @@ export const MapMode: React.FC<MapModeProps> = () => {
             onLoad={(map) => { mapRef.current = map; }}
             onIdle={handleIdle}
           >
-            {heatmapData.length > 0 && (
+            {heatmapPoints.length > 0 && (
               <HeatmapLayer
-                data={heatmapData.map(d => new google.maps.LatLng(d.lat, d.lng))}
+                data={heatmapPoints}
                 options={{
-                  radius: 20,
-                  opacity: 0.6,
+                  radius: 30,
+                  opacity: 0.8,
                 }}
               />
             )}
