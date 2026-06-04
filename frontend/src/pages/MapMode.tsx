@@ -46,14 +46,14 @@ export const MapMode: React.FC<MapModeProps> = () => {
           data: clusters,
           getPosition: (d: any) => [d.longitude, d.latitude],
           getWeight: (d: any) => d.count,
-          radiusPixels: 50, // 개별 점의 크기는 줄임
-          intensity: 4,    // 중첩 시 색상이 붉게 변하는 강도 대폭 강화
-          threshold: 0.01,  // 아주 미세한 데이터도 시각화
+          radiusPixels: 45, // 약간 더 세밀하게 조정
+          intensity: 1.5,    // 너무 붉어지지 않도록 강도 대폭 하향
+          threshold: 0.05,  // 미세한 데이터는 연하게 처리
           colorRange: [
             [0, 88, 190],   // 파랑 (저밀도)
-            [0, 196, 159],  // 청록
-            [255, 187, 40], // 노랑
-            [230, 81, 0],   // 주황
+            [34, 197, 94],  // 초록 (안전/낮음)
+            [234, 179, 8],  // 노랑
+            [249, 115, 22], // 주황
             [183, 28, 28]   // 빨강 (고밀도)
           ]
         }) as any
