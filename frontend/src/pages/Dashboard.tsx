@@ -151,7 +151,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
               <span className="material-symbols-outlined">warning</span>
             </div>
             <span className="text-success text-[11px] font-bold bg-green-100 dark:bg-green-950 px-2 py-0.5 rounded-full">
-              +12% 전월대비
+              신규 감지 (24h)
             </span>
           </div>
           <p className="text-on-surface-variant text-xs font-bold">전체 피해 발견 건수</p>
@@ -169,11 +169,11 @@ export const Dashboard: React.FC<DashboardProps> = () => {
             </div>
             {highRiskCountry && (
               <span className="text-error text-[11px] font-bold bg-red-100 dark:bg-red-950 px-2 py-0.5 rounded-full">
-                위험도 높음
+                밀집도 주의
               </span>
             )}
           </div>
-          <p className="text-on-surface-variant text-xs font-bold">고위험 국가 (최다 발생)</p>
+          <p className="text-on-surface-variant text-xs font-bold">집중 관리 국가 (최다 발생)</p>
           <p className="font-display text-2xl font-bold text-on-surface mt-xs">
             {highRiskCountry ? highRiskCountry.country : '-'}{' '}
             <span className="text-sm font-normal text-outline">({highRiskCountry ? highRiskCountry.count : 0}건)</span>
