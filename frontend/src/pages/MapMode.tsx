@@ -11,7 +11,9 @@ export const MapMode: React.FC<MapModeProps> = () => {
   const [selectedMarker, setSelectedMarker] = useState<RoadDamageMarker | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [markers, setMarkers] = useState<RoadDamageMarker[]>([]);
+  const [clusters, setClusters] = useState<{latitude: number, longitude: number, count: number}[]>([]);
   const [mapCenter, setMapCenter] = useState({ lat: 37.53, lng: 126.98 });
+  const [zoom, setZoom] = useState(12);
   const [searchQuery, setSearchQuery] = useState('');
   const mapRef = useRef<google.maps.Map | null>(null);
   const [searchParams] = useSearchParams();
@@ -27,6 +29,9 @@ export const MapMode: React.FC<MapModeProps> = () => {
     if (!mapRef.current) return;
 
     const bounds = mapRef.current.getBounds();
+    const currentZoom = mapRef.current.getZoom() || 12;
+    setZoom(currentZoom);
+
     if (!bounds) return;
 
     const ne = bounds.getNorthEast();
@@ -38,14 +43,29 @@ export const MapMode: React.FC<MapModeProps> = () => {
     const maxLng = ne.lng();
 
     try {
-      const url = `/api/damages/markers?minLat=${minLat}&minLng=${minLng}&maxLat=${maxLat}&maxLng=${maxLng}&limit=1000`;
-      const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
-        setMarkers(data);
+      if (currentZoom < 13) {
+        // 줌 레벨이 낮을 때: 클러스터 요청
+        // 줌 레벨에 따라 그리드 크기 조절 (줌이 낮을수록 그리드 크게)
+        const gridSize = Math.pow(2, 14 - currentZoom) * 0.01;
+        const url = `/api/damages/clusters?minLat=${minLat}&minLng=${minLng}&maxLat=${maxLat}&maxLng=${maxLng}&gridSize=${gridSize}`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          setClusters(data);
+          setMarkers([]);
+        }
+      } else {
+        // 줌 레벨이 높을 때: 개별 마커 요청
+        const url = `/api/damages/markers?minLat=${minLat}&minLng=${minLng}&maxLat=${maxLat}&maxLng=${maxLng}&limit=1000`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          setMarkers(data);
+          setClusters([]);
+        }
       }
     } catch (error) {
-      console.error('Failed to fetch markers in viewport:', error);
+      console.error('Failed to fetch data in viewport:', error);
     }
   };
 
@@ -205,7 +225,9 @@ export const MapMode: React.FC<MapModeProps> = () => {
             <div className="flex justify-between items-baseline">
               <span className="text-xs text-on-surface-variant">발견된 손상 건수:</span>
               <span className="font-display text-lg font-bold text-on-surface">
-                {markers.length} <span className="text-xs font-normal text-outline">건</span>
+                {zoom < 13 
+                  ? clusters.reduce((acc, c) => acc + c.count, 0).toLocaleString() 
+                  : markers.length.toLocaleString()} <span className="text-xs font-normal text-outline">건</span>
               </span>
             </div>
           </div>
@@ -283,6 +305,7 @@ export const MapMode: React.FC<MapModeProps> = () => {
             >
               {(clusterer) => (
                 <>
+                  {/* 개별 마커 렌더링 (줌이 높을 때) */}
                   {markers.map((marker) => (
                     <Marker
                       key={marker.id}
@@ -296,6 +319,27 @@ export const MapMode: React.FC<MapModeProps> = () => {
                         strokeWeight: 2,
                         strokeColor: '#FFFFFF',
                         scale: 8,
+                      }}
+                    />
+                  ))}
+
+                  {/* 서버 사이드 클러스터 마커 렌더링 (줌이 낮을 때) */}
+                  {clusters.map((cluster, index) => (
+                    <Marker
+                      key={`cluster-${index}`}
+                      position={{ lat: cluster.latitude, lng: cluster.longitude }}
+                      label={{
+                        text: cluster.count > 999 ? `${(cluster.count / 1000).toFixed(1)}k` : cluster.count.toString(),
+                        color: 'white',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                      }}
+                      icon={{
+                        path: google.maps.SymbolPath.CIRCLE,
+                        fillColor: '#0058be',
+                        fillOpacity: 0.8,
+                        strokeWeight: 0,
+                        scale: 24,
                       }}
                     />
                   ))}
