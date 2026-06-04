@@ -31,18 +31,19 @@ public class AiReportService {
         // 1. 데이터 수집
         List<CountryStatsDto> countryStats = markerRepository.findCountryStats();
         List<DamageStatsDto> typeStats = labelRepository.findDamageTypeStats();
+        List<Object[]> rawCountryTypeStats = labelRepository.findCountryDamageTypeStats();
         
         // 2. AI 분석 요청용 프롬프트 생성
-        String prompt = createPrompt(countryStats, typeStats);
+        String prompt = createPrompt(countryStats, typeStats, rawCountryTypeStats);
         
-        // 3. AI API 호출 (OpenAI 호환 API)
+        // 3. AI API 호출
         String aiAnalysis = callAiApi(prompt);
         
         // 4. PDF 생성
-        return createPdf(aiAnalysis, countryStats, typeStats);
+        return createPdf(aiAnalysis, countryStats, rawCountryTypeStats);
     }
 
-    private String createPrompt(List<CountryStatsDto> countryStats, List<DamageStatsDto> typeStats) {
+    private String createPrompt(List<CountryStatsDto> countryStats, List<DamageStatsDto> typeStats, List<Object[]> rawCountryTypeStats) {
         String countryInfo = countryStats.stream()
                 .map(c -> c.getCountry() + ": " + c.getCount() + "건")
                 .collect(Collectors.joining(", "));
@@ -51,17 +52,22 @@ public class AiReportService {
                 .map(t -> t.getDamageType() + ": " + t.getCount() + "건")
                 .collect(Collectors.joining(", "));
 
-        return "당신은 고도의 정밀 데이터 분석가이자 도로 공학 전문가입니다. 제공된 실시간 수치 데이터를 '철저히 근거로' 분석하여 전문적인 보고서를 작성하세요. 추측보다는 데이터 간의 비교와 현상 분석에 집중해 주세요.\n\n" +
-                "### 실시간 관측 데이터 ###\n" +
-                "1. 국가별 데이터 분포: [" + countryInfo + "]\n" +
-                "2. 손상 유형별 발생 건수: [" + typeInfo + "]\n\n" +
-                "### 분석 지침 ###\n" +
-                "- **데이터 기반 진단**: 가장 높은 수치를 기록한 국가와 유형을 지목하고, 전체 데이터에서 차지하는 비중을 분석하세요.\n" +
-                "- **국가별 비교 분석**: 데이터가 가장 많은 국가와 적은 국가의 차이를 수치적으로 비교하고, 해당 국가에서 어떤 파손 유형이 지배적인지 데이터를 통해 판단하세요.\n" +
-                "- **유형별 상관관계**: 특정 파손 유형(예: D20 포트홀)이 특정 국가에서 집중적으로 발생하는 경우, 이를 데이터적 특이사항으로 기록하세요.\n" +
-                "- **수치적 전망**: 현재의 누적 데이터 속도를 고려할 때 향후 관리가 시급한 지점을 데이터 우선순위에 따라 제안하세요.\n\n" +
+        String detailedStats = rawCountryTypeStats.stream()
+                .map(row -> String.format("[%s - %s: %s건]", row[0], row[1], row[2]))
+                .collect(Collectors.joining(", "));
+
+        return "당신은 세계적인 데이터 사이언티스트이자 글로벌 인프라 정책 고문입니다. 제공된 정밀 데이터를 바탕으로 최고 수준의 [글로벌 도로 인프라 분석 보고서]를 한국어로 작성하세요.\n\n" +
+                "### 실시간 관측 데이터 현황 ###\n" +
+                "1. 국가별 누적: [" + countryInfo + "]\n" +
+                "2. 글로벌 유형 분포: [" + typeInfo + "]\n" +
+                "3. 국가별-유형별 세부 통계: [" + detailedStats + "]\n\n" +
+                "### 보고서 작성 필수 지침 ###\n" +
+                "- **국가별 세밀 분석**: 각 나라별로 어떤 파손이 가장 지배적인지 수치적으로 지목하고, 그 원인을 해당 국가의 '기후적 특성'(예: 인도의 몬순, 일본의 지진/습도 등)이나 최근 인프라 관련 이슈와 결합하여 분석하세요.\n" +
+                "- **유형별 인프라 진단**: D00(종방향), D20(포트홀) 등 구체적 파손 코드가 각 국가의 도로 수명에 미치는 공학적 영향을 분석하세요.\n" +
+                "- **글로벌 통찰**: 데이터로 증명된 현상을 바탕으로, 국가별 맞춤형 유지보수 전략을 제안하세요.\n" +
+                "- **결론 및 제언**: 각 국가의 지리적/사회적 배경을 고려한 인프라 안전 총평을 작성하세요.\n\n" +
                 "작성 언어: 한국어\n" +
-                "톤: 객관적, 분석적, 전문적 (데이터 수치에 기반한 단호한 어조 사용)";
+                "톤: 고도로 전문적이고 통찰력 있는 학술적 리포트 스타일";
     }
 
     private String callAiApi(String prompt) {
@@ -101,88 +107,85 @@ public class AiReportService {
         return "AI 분석 결과를 가져올 수 없습니다.";
     }
 
-    private byte[] createPdf(String aiAnalysis, List<CountryStatsDto> countryStats, List<DamageStatsDto> typeStats) {
+    private byte[] createPdf(String aiAnalysis, List<CountryStatsDto> countryStats, List<Object[]> rawCountryTypeStats) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        Document document = new Document(com.lowagie.text.PageSize.A4, 50, 50, 50, 50);
+        Document document = new Document(com.lowagie.text.PageSize.A4, 40, 40, 40, 40);
         try {
             PdfWriter.getInstance(document, out);
             document.open();
             
-            // 한글 폰트 설정
             com.lowagie.text.pdf.BaseFont objBaseFont = com.lowagie.text.pdf.BaseFont.createFont("HYGoThic-Medium", "UniKS-UCS2-H", com.lowagie.text.pdf.BaseFont.NOT_EMBEDDED);
-            Font titleFont = new Font(objBaseFont, 22, Font.BOLD, new java.awt.Color(0, 88, 190));
-            Font subTitleFont = new Font(objBaseFont, 16, Font.BOLD, new java.awt.Color(59, 130, 246));
-            Font tableHeaderFont = new Font(objBaseFont, 10, Font.BOLD, java.awt.Color.WHITE);
-            Font normalFont = new Font(objBaseFont, 10, Font.NORMAL, new java.awt.Color(31, 41, 55));
+            Font titleFont = new Font(objBaseFont, 24, Font.BOLD, new java.awt.Color(0, 88, 190));
+            Font subTitleFont = new Font(objBaseFont, 14, Font.BOLD, new java.awt.Color(59, 130, 246));
+            Font tableHeaderFont = new Font(objBaseFont, 9, Font.BOLD, java.awt.Color.WHITE);
+            Font normalFont = new Font(objBaseFont, 9, Font.NORMAL, new java.awt.Color(31, 41, 55));
             Font footerFont = new Font(objBaseFont, 8, Font.ITALIC, java.awt.Color.GRAY);
 
-            // Header Section
-            Paragraph mainTitle = new Paragraph("ROAD DAMAGE ANALYSIS REPORT", titleFont);
+            // Header
+            Paragraph mainTitle = new Paragraph("ROAD DAMAGE INTELLIGENCE REPORT", titleFont);
             mainTitle.setAlignment(com.lowagie.text.Element.ALIGN_CENTER);
             document.add(mainTitle);
             
-            Paragraph subHeader = new Paragraph("AI-Powered Infrastructure Intelligence System", new Font(Font.HELVETICA, 10, Font.NORMAL, java.awt.Color.GRAY));
-            subHeader.setAlignment(com.lowagie.text.Element.ALIGN_CENTER);
-            document.add(subHeader);
+            String timestamp = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date());
+            Paragraph datePara = new Paragraph("Report Generated at: " + timestamp, new Font(Font.HELVETICA, 9, Font.NORMAL, java.awt.Color.GRAY));
+            datePara.setAlignment(com.lowagie.text.Element.ALIGN_CENTER);
+            document.add(datePara);
             
             document.add(new Paragraph("\n"));
             com.lowagie.text.pdf.draw.LineSeparator line = new com.lowagie.text.pdf.draw.LineSeparator();
-            line.setLineColor(new java.awt.Color(226, 232, 240));
+            line.setLineColor(new java.awt.Color(203, 213, 225));
             document.add(new com.lowagie.text.Chunk(line));
-            document.add(new Paragraph("\n"));
 
-            // 1. Statistics Table Section
-            document.add(new Paragraph("1. 핵심 통계 요약 (Statistical Summary)", subTitleFont));
-            document.add(new Paragraph("\n"));
+            // 1. Country Stats Table
+            document.add(new Paragraph("\n1. 국가별 감지 현황 (Country Detections)", subTitleFont));
+            com.lowagie.text.pdf.PdfPTable countryTable = new com.lowagie.text.pdf.PdfPTable(2);
+            countryTable.setWidthPercentage(100);
+            countryTable.setSpacingBefore(10f);
+            
+            addTableCell(countryTable, "국가명 (Country)", tableHeaderFont, new java.awt.Color(0, 88, 190));
+            addTableCell(countryTable, "누적 건수 (Count)", tableHeaderFont, new java.awt.Color(0, 88, 190));
 
-            com.lowagie.text.pdf.PdfPTable table = new com.lowagie.text.pdf.PdfPTable(2);
-            table.setWidthPercentage(100);
-            table.setSpacingBefore(10f);
-            table.setSpacingAfter(10f);
-
-            // Table Header
-            com.lowagie.text.pdf.PdfPCell header1 = new com.lowagie.text.pdf.PdfPCell(new Paragraph("국가 (Country)", tableHeaderFont));
-            header1.setBackgroundColor(new java.awt.Color(0, 88, 190));
-            header1.setPadding(8f);
-            table.addCell(header1);
-
-            com.lowagie.text.pdf.PdfPCell header2 = new com.lowagie.text.pdf.PdfPCell(new Paragraph("감지 건수 (Detections)", tableHeaderFont));
-            header2.setBackgroundColor(new java.awt.Color(0, 88, 190));
-            header2.setPadding(8f);
-            table.addCell(header2);
-
-            // Table Body
             for (CountryStatsDto c : countryStats) {
-                com.lowagie.text.pdf.PdfPCell cellName = new com.lowagie.text.pdf.PdfPCell(new Paragraph(c.getCountry(), normalFont));
-                cellName.setPadding(5f);
-                table.addCell(cellName);
-
-                com.lowagie.text.pdf.PdfPCell cellCount = new com.lowagie.text.pdf.PdfPCell(new Paragraph(String.format("%,d건", c.getCount()), normalFont));
-                cellCount.setPadding(5f);
-                cellCount.setHorizontalAlignment(com.lowagie.text.Element.ALIGN_RIGHT);
-                table.addCell(cellCount);
+                addTableCell(countryTable, c.getCountry(), normalFont, null);
+                addTableCell(countryTable, String.format("%,d건", c.getCount()), normalFont, null, com.lowagie.text.Element.ALIGN_RIGHT);
             }
-            document.add(table);
-            document.add(new Paragraph("\n"));
+            document.add(countryTable);
 
-            // 2. AI Analysis Section
-            document.add(new Paragraph("2. AI 데이터 심층 분석 (Expert Insights)", subTitleFont));
+            // 2. Damage Type Breakdown Table
+            document.add(new Paragraph("\n2. 국가별-파손유형별 세부 통계 (Damage Type Breakdown)", subTitleFont));
+            com.lowagie.text.pdf.PdfPTable typeTable = new com.lowagie.text.pdf.PdfPTable(3);
+            typeTable.setWidthPercentage(100);
+            typeTable.setSpacingBefore(10f);
+            
+            addTableCell(typeTable, "국가 (Country)", tableHeaderFont, new java.awt.Color(59, 130, 246));
+            addTableCell(typeTable, "파손 유형 (Type)", tableHeaderFont, new java.awt.Color(59, 130, 246));
+            addTableCell(typeTable, "발생 건수 (Count)", tableHeaderFont, new java.awt.Color(59, 130, 246));
+
+            for (Object[] row : rawCountryTypeStats) {
+                addTableCell(typeTable, (String)row[0], normalFont, null);
+                addTableCell(typeTable, (String)row[1], normalFont, null);
+                addTableCell(typeTable, String.format("%,d건", ((Number)row[2]).longValue()), normalFont, null, com.lowagie.text.Element.ALIGN_RIGHT);
+            }
+            document.add(typeTable);
+
+            // 3. AI Analysis
+            document.newPage();
+            document.add(new Paragraph("3. AI 전문가 심층 분석 및 정책 제언", subTitleFont));
             document.add(new Paragraph("\n"));
             
             String[] paragraphs = aiAnalysis.split("\n");
             for (String p : paragraphs) {
                 if (!p.trim().isEmpty()) {
                     Paragraph para = new Paragraph(p.trim(), normalFont);
-                    para.setSpacingAfter(8f);
-                    para.setLeading(15f); // 줄간격
+                    para.setSpacingAfter(6f);
+                    para.setLeading(14f);
                     document.add(para);
                 }
             }
             
-            // Footer
             document.add(new Paragraph("\n\n"));
             document.add(new com.lowagie.text.Chunk(line));
-            Paragraph footer = new Paragraph("본 보고서는 실시간 도로 관리 시스템의 데이터를 기반으로 AI가 자동 생성하였습니다. 생성 일시: " + new java.util.Date().toString(), footerFont);
+            Paragraph footer = new Paragraph("본 보고서는 RDD AI 관제 시스템에 의해 실시간 데이터 분석을 거쳐 생성되었습니다.", footerFont);
             footer.setAlignment(com.lowagie.text.Element.ALIGN_RIGHT);
             document.add(footer);
             
@@ -192,5 +195,18 @@ public class AiReportService {
             document.close();
         }
         return out.toByteArray();
+    }
+
+    private void addTableCell(com.lowagie.text.pdf.PdfPTable table, String text, Font font, java.awt.Color bgColor) {
+        addTableCell(table, text, font, bgColor, com.lowagie.text.Element.ALIGN_LEFT);
+    }
+
+    private void addTableCell(com.lowagie.text.pdf.PdfPTable table, String text, Font font, java.awt.Color bgColor, int align) {
+        com.lowagie.text.pdf.PdfPCell cell = new com.lowagie.text.pdf.PdfPCell(new Paragraph(text, font));
+        if (bgColor != null) cell.setBackgroundColor(bgColor);
+        cell.setPadding(6f);
+        cell.setHorizontalAlignment(align);
+        cell.setVerticalAlignment(com.lowagie.text.Element.ALIGN_MIDDLE);
+        table.addCell(cell);
     }
 }
