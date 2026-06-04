@@ -99,4 +99,10 @@ public class RoadDamageController {
     public List<CountryStatsDto> getCountryStats() {
         return roadDamageMarkerRepository.findCountryStats();
     }
+
+    @Operation(summary = "일별 마커 통계", description = "날짜별 도로 손상 마커 개수 통계를 조회합니다.")
+    @GetMapping("/stats/daily")
+    public List<Object[]> getDailyStats() {
+        return roadDamageMarkerRepository.findDailyStats();
+    }
 }

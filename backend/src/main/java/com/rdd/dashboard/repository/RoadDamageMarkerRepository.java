@@ -34,4 +34,10 @@ public interface RoadDamageMarkerRepository extends JpaRepository<RoadDamageMark
     @Query("SELECT new com.rdd.dashboard.dto.CountryStatsDto(rm.country, COUNT(rm)) " +
            "FROM RoadDamageMarker rm GROUP BY rm.country")
     List<CountryStatsDto> findCountryStats();
+
+    @Query(value = "SELECT CAST(created_at AS DATE) as date, COUNT(*) as count " +
+            "FROM road_damage_markers " +
+            "GROUP BY CAST(created_at AS DATE) " +
+            "ORDER BY date ASC", nativeQuery = true)
+    List<Object[]> findDailyStats();
 }
