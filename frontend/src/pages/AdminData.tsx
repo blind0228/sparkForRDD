@@ -1,23 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { RoadDamageMarker } from '../types/damage';
 
 interface AdminDataProps {
-  damages: RoadDamageMarker[];
   onAddDamage: (damage: any) => void;
   onDeleteDamage: (id: number) => void;
 }
 
 export const AdminData: React.FC<AdminDataProps> = ({
-  damages,
   onAddDamage,
   onDeleteDamage,
 }) => {
+  const [damages, setDamages] = useState<RoadDamageMarker[]>([]);
+  const [loading, setLoading] = useState(true);
   const [damageType, setDamageType] = useState('D00');
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
   const [imageX, setImageX] = useState('');
   const [imageY, setImageY] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  useEffect(() => {
+    const fetchDamages = async () => {
+      try {
+        const res = await fetch('/api/damages/markers?limit=50');
+        if (res.ok) {
+          const data = await res.json();
+          setDamages(data);
+        }
+      } catch (error) {
+        console.error('데이터 조회 실패:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDamages();
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,6 +66,14 @@ export const AdminData: React.FC<AdminDataProps> = ({
       setSuccessMsg('');
     }, 3000);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px] w-full">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
 
   return (
@@ -173,6 +198,7 @@ export const AdminData: React.FC<AdminDataProps> = ({
                         onClick={() => {
                           if (confirm(`손상 정보 #${d.id}번을 정말 삭제하시겠습니까?`)) {
                             onDeleteDamage(d.id);
+                            setDamages(damages.filter(item => item.id !== d.id));
                           }
                         }}
                         className="text-error hover:underline text-[11px] font-bold"

@@ -18,13 +18,13 @@ interface CountryStats {
 }
 
 interface DashboardProps {
-  damages: RoadDamageMarker[];
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
+export const Dashboard: React.FC<DashboardProps> = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState<DamageStats[]>([]);
   const [countryStats, setCountryStats] = useState<CountryStats[]>([]);
+  const [recentMarkers, setRecentMarkers] = useState<RoadDamageMarker[]>([]);
   const [loading, setLoading] = useState(true);
 
   // 대미지 타입 한국어 매핑
@@ -38,9 +38,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [statsRes, countryStatsRes] = await Promise.all([
+        const [statsRes, countryStatsRes, recentRes] = await Promise.all([
           fetch('/api/damages/stats/types'),
-          fetch('/api/damages/stats/countries')
+          fetch('/api/damages/stats/countries'),
+          fetch('/api/damages/markers?limit=10')
         ]);
 
         if (statsRes.ok) {
@@ -51,6 +52,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
           const countryData = await countryStatsRes.json();
           setCountryStats(countryData);
         }
+        if (recentRes.ok) {
+          const recentData = await recentRes.json();
+          setRecentMarkers(recentData);
+        }
       } catch (error) {
         console.error('API 호출 중 오류가 발생했습니다.', error);
       } finally {
@@ -59,7 +64,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
     };
 
     fetchData();
-  }, [damages]);
+  }, []);
 
   // 전체 건수 계산
   const totalDamages = stats.reduce((sum, item) => sum + item.count, 0);
@@ -269,8 +274,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
             </button>
           </div>
           <div className="space-y-sm flex-grow">
-            {damages.length > 0 ? (
-              damages.slice(0, 3).map((damage) => (
+            {recentMarkers.length > 0 ? (
+              recentMarkers.slice(0, 3).map((damage) => (
                 <div
                   key={damage.id}
                   onClick={() => navigate('/damages')}
@@ -327,8 +332,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant">
-              {damages.length > 0 ? (
-                damages.slice(0, 5).map((row) => (
+              {recentMarkers.length > 0 ? (
+                recentMarkers.slice(0, 5).map((row) => (
                   <tr key={row.id} className="hover:bg-primary-container/5 transition-colors">
                     <td className="px-lg py-md font-mono text-xs font-medium text-primary">#{row.id}</td>
                     <td className="px-lg py-md text-xs text-on-surface">{row.latitude.toFixed(5)}, {row.longitude.toFixed(5)}</td>
