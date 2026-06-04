@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow, MarkerClusterer, HeatmapLayer } from '@react-google-maps/api';
+import React, { useState, useRef, useEffect } from 'react';
+import { GoogleMap, useJsApiLoader, Marker, InfoWindow, MarkerClusterer } from '@react-google-maps/api';
 import { useSearchParams } from 'react-router-dom';
 import type { RoadDamageMarker } from '../types/damage';
 import { DamageDetailModal } from '../components/DamageDetailModal';
@@ -12,7 +12,6 @@ export const MapMode: React.FC<MapModeProps> = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [markers, setMarkers] = useState<RoadDamageMarker[]>([]);
   const [clusters, setClusters] = useState<{latitude: number, longitude: number, count: number}[]>([]);
-  const [heatmapData, setHeatmapData] = useState<{lat: number, lng: number}[]>([]);
   const [mapCenter, setMapCenter] = useState({ lat: 37.53, lng: 126.98 });
   const [zoom, setZoom] = useState(12);
   const [searchQuery, setSearchQuery] = useState('');
@@ -23,20 +22,7 @@ export const MapMode: React.FC<MapModeProps> = () => {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
-    libraries: ['visualization'] as any,
   });
-
-  const heatmapPoints = useMemo(() => {
-    if (typeof window === 'undefined' || !window.google || !window.google.maps || heatmapData.length === 0) {
-      return [];
-    }
-    try {
-      return heatmapData.map(d => new google.maps.LatLng(d.lat, d.lng));
-    } catch (e) {
-      console.error('Heatmap point creation failed:', e);
-      return [];
-    }
-  }, [heatmapData, isLoaded]); // isLoaded 의존성 추가로 로드 완료 후 재계산 보장
 
   // 지도 영역 변경 시 데이터 페칭
   const handleIdle = async () => {
@@ -51,6 +37,7 @@ export const MapMode: React.FC<MapModeProps> = () => {
     const ne = bounds.getNorthEast();
     const sw = bounds.getSouthWest();
 
+    // 전 세계를 볼 때 위경도 범위를 안전한 값으로 캡핑
     const currentMinLat = Math.max(-85, sw.lat());
     const currentMaxLat = Math.min(85, ne.lat());
     const currentMinLng = sw.lng() < ne.lng() ? sw.lng() : -180;
@@ -63,41 +50,30 @@ export const MapMode: React.FC<MapModeProps> = () => {
     const finalMaxLat = isWorldView ? 85 : currentMaxLat;
 
     try {
-      if (currentZoom < 10) {
-        // 줌 레벨이 낮을 때: 히트맵 데이터
-        // 줌 0-2일 때는 그리드 크기를 아주 크게(20.0) 설정하여 전 세계 데이터를 순식간에 가져옴
-        let gridSize = 10.0;
-        if (currentZoom < 3) gridSize = 20.0;
-        else if (!isWorldView) gridSize = Math.max(0.2, Math.pow(2, 11 - currentZoom) * 0.4);
-        
+      if (currentZoom < 16) {
+        // 줌 레벨이 낮거나 중간일 때: 클러스터 요청 (히트맵 중단으로 인한 대체)
+        let gridSize = 0.1;
+        if (currentZoom < 5) gridSize = 15.0;
+        else if (currentZoom < 10) gridSize = Math.max(1.0, Math.pow(2, 11 - currentZoom) * 0.5);
+        else gridSize = Math.max(0.05, Math.pow(2, 14 - currentZoom) * 0.02);
+
         const url = `/api/damages/clusters?minLat=${finalMinLat}&minLng=${finalMinLng}&maxLat=${finalMaxLat}&maxLng=${finalMaxLng}&gridSize=${gridSize}`;
         const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data)) {
-            setHeatmapData(data.map((c: any) => ({ lat: c.latitude, lng: c.longitude })));
-            setClusters([]);
+            setClusters(data);
             setMarkers([]);
           }
         }
-      } else if (currentZoom < 16) {
-        const gridSize = Math.pow(2, 12 - currentZoom) * 0.1;
-        const url = `/api/damages/clusters?minLat=${currentMinLat}&minLng=${currentMinLng}&maxLat=${currentMaxLat}&maxLng=${currentMaxLng}&gridSize=${gridSize}`;
-        const res = await fetch(url);
-        if (res.ok) {
-          const data = await res.json();
-          setClusters(data);
-          setMarkers([]);
-          setHeatmapData([]);
-        }
       } else {
+        // 아주 많이 확대했을 때만 개별 마커 (줌 16 이상)
         const url = `/api/damages/markers?minLat=${currentMinLat}&minLng=${currentMinLng}&maxLat=${currentMaxLat}&maxLng=${currentMaxLng}&limit=1000`;
         const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
           setMarkers(data);
           setClusters([]);
-          setHeatmapData([]);
         }
       }
     } catch (error) {
@@ -262,9 +238,7 @@ export const MapMode: React.FC<MapModeProps> = () => {
               <span className="text-xs text-on-surface-variant">발견된 손상 건수:</span>
               <span className="font-display text-lg font-bold text-on-surface">
                 {(zoom < 16 
-                  ? (clusters.length > 0 
-                      ? clusters.reduce((acc, c) => acc + c.count, 0) 
-                      : heatmapData.length * 5) 
+                  ? clusters.reduce((acc, c) => acc + c.count, 0) 
                   : markers.length).toLocaleString()} <span className="text-xs font-normal text-outline">건</span>
               </span>
             </div>
@@ -340,16 +314,6 @@ export const MapMode: React.FC<MapModeProps> = () => {
             onLoad={(map) => { mapRef.current = map; }}
             onIdle={handleIdle}
           >
-            {heatmapPoints.length > 0 && (
-              <HeatmapLayer
-                data={heatmapPoints}
-                options={{
-                  radius: 30,
-                  opacity: 0.8,
-                }}
-              />
-            )}
-            
             <MarkerClusterer
               options={{
                 imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m',
