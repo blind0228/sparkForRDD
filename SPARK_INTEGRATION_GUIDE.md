@@ -33,9 +33,11 @@ YOLO 라벨 1줄 당 1개의 행으로 구성됩니다.
 | `damage_code` | `VARCHAR` | 손상 코드 (예: `D00`, `D10`) |
 | `damage_name` | `VARCHAR` | 손상 명칭 |
 | `class_id` | `INTEGER` | YOLO 클래스 ID |
-| `x_center`, `y_center` | `DOUBLE` | BBox 중심 좌표 (0~1) |
-| `bbox_width`, `bbox_height`| `DOUBLE` | BBox 크기 (0~1) |
+| `x_center`, `y_center` | `DOUBLE` | **BBox 중심 좌표 (0~1 상대값)** |
+| `bbox_width`, `bbox_height`| `DOUBLE` | **BBox 크기 (0~1 상대값)** |
 | `latitude`, `longitude` | `DOUBLE` | 마커와 동일한 위경도 |
+
+> **주의**: 좌표값(`x_center`, `y_center`, `width`, `height`)은 반드시 이미지 픽셀 크기로 정규화된 **0.0 ~ 1.0 사이의 실수값**이어야 합니다. 픽셀 좌표(예: 320, 480)로 적재할 경우 지도 및 상세 모달에서 박스 위치가 어긋나게 됩니다.
 
 ---
 
