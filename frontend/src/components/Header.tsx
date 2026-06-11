@@ -1,18 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
   userName?: string;
   userDept?: string;
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  searchQuery,
-  onSearchChange,
   userName = '김관리 선임',
   userDept = '시설유지보수팀',
 }) => {
+  const [localSearch, setLocalSearch] = useState('');
+  const navigate = useNavigate();
+
+  const handleSearchSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && localSearch.trim()) {
+      // 지도 페이지로 이동하면서 검색어를 쿼리 파라미터로 전달
+      navigate(`/map?q=${encodeURIComponent(localSearch.trim())}`);
+    }
+  };
+
   return (
     <header className="h-16 fixed top-0 right-0 z-40 bg-surface border-b border-outline-variant flex justify-between items-center w-[calc(100%-260px)] px-lg">
       <div className="flex items-center gap-md">
@@ -22,10 +29,11 @@ export const Header: React.FC<HeaderProps> = ({
           </span>
           <input
             type="text"
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            onKeyDown={handleSearchSubmit}
             className="pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-full w-80 text-sm focus:ring-2 focus:ring-primary/20 transition-all focus:outline-none"
-            placeholder="시설물 또는 지역 검색..."
+            placeholder="시설물 또는 지역 검색 후 Enter..."
           />
         </div>
       </div>

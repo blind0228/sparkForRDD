@@ -18,6 +18,8 @@ Spark DataFrame은 반드시 아래의 테이블 스키마(Schema)와 정확히 
 | `damage_type`| `VARCHAR(255)` | `StringType` | 도로 손상 분류 코드 (예: `D00`, `D10`, `D20`, `D40`) | O |
 | `latitude` | `DOUBLE` | `DoubleType` | 손상 위치 위도 (GPS) | O |
 | `longitude`| `DOUBLE` | `DoubleType` | 손상 위치 경도 (GPS) | O |
+| `image_x` | `DOUBLE` | `DoubleType` | 원본 이미지 내 파손 X 좌표 | O |
+| `image_y` | `DOUBLE` | `DoubleType` | 원본 이미지 내 파손 Y 좌표 | O |
 | `captured_at`| `DATETIME(6)` | `TimestampType` | 손상 데이터가 캡처되거나 분석이 완료된 시간 | O |
 
 ---
@@ -39,7 +41,7 @@ Spark DataFrame은 반드시 아래의 테이블 스키마(Schema)와 정확히 
 from pyspark.sql.functions import current_timestamp
 
 # 1. 처리 완료된 데이터프레임이 있다고 가정 (df)
-# 스키마 구성: damage_type(String), latitude(Double), longitude(Double)
+# 스키마 구성: damage_type(String), latitude(Double), longitude(Double), image_x(Double), image_y(Double)
 
 # 2. 필수 컬럼인 captured_at이 없다면 현재 시간으로 추가
 final_df = df.withColumn("captured_at", current_timestamp())

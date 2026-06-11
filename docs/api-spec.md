@@ -79,7 +79,9 @@
     {
       "damageType": "D20",
       "latitude": 37.525,
-      "longitude": 126.924
+      "longitude": 126.924,
+      "imageX": 320.5,
+      "imageY": 240.0
     }
     ```
 - **Response**:
@@ -155,6 +157,8 @@
 | damageType | String | 손상 유형 (D00: 종방향 균열, D10: 횡방향 균열 등) |
 | latitude | Double | GPS 위도 |
 | longitude | Double | GPS 경도 |
+| imageX | Double | 이미지 내 파손 X 좌표 |
+| imageY | Double | 이미지 내 파손 Y 좌표 |
 | capturedAt | LocalDateTime | 기록 일시 |
 
 ### DamageStatsDto

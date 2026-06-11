@@ -51,6 +51,8 @@ class RoadDamageControllerTest {
                 .damageType("Pothole")
                 .latitude(37.1)
                 .longitude(127.1)
+                .imageX(150.0)
+                .imageY(200.0)
                 .capturedAt(LocalDateTime.now())
                 .build();
         given(roadDamageRepository.findWithPagination(any(), any(Pageable.class)))

@@ -15,6 +15,8 @@ interface RoadDamage {
   damageType: string;
   latitude: number;
   longitude: number;
+  imageX: number;
+  imageY: number;
   capturedAt: string;
 }
 
@@ -59,34 +61,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
     fetchData();
   }, [damages]);
 
-  // API 호출 실패 혹은 DB가 빌 경우를 위한 고품질 Mock Data 구성
-  const defaultStats: DamageStats[] = [
-    { damageType: 'D00', count: 428 },
-    { damageType: 'D10', count: 215 },
-    { damageType: 'D20', count: 562 },
-    { damageType: 'D40', count: 43 },
-  ];
-
-  const defaultDamages: RoadDamage[] = [
-    { id: 1, damageType: 'D40', latitude: 37.573, longitude: 126.979, capturedAt: new Date(Date.now() - 10 * 60000).toISOString() },
-    { id: 2, damageType: 'D20', latitude: 37.503, longitude: 127.044, capturedAt: new Date(Date.now() - 45 * 60000).toISOString() },
-    { id: 3, damageType: 'D00', latitude: 37.556, longitude: 126.906, capturedAt: new Date(Date.now() - 120 * 60000).toISOString() },
-  ];
-
-  const currentStats = stats.length > 0 ? stats : defaultStats;
-  const currentDamages = damages.length > 0 ? damages : defaultDamages;
-
   // 전체 건수 계산
-  const totalDamages = currentStats.reduce((sum, item) => sum + item.count, 0);
+  const totalDamages = stats.reduce((sum, item) => sum + item.count, 0);
 
   // 고위험 구역 계산 (D40)
-  const highRiskCount = currentStats.find((item) => item.damageType === 'D40')?.count || 0;
+  const highRiskCount = stats.find((item) => item.damageType === 'D40')?.count || 0;
 
   // 최다 발생 유형
-  const mostFrequentType = [...currentStats].sort((a, b) => b.count - a.count)[0]?.damageType || 'D00';
+  const mostFrequentType = stats.length > 0 
+    ? [...stats].sort((a, b) => b.count - a.count)[0]?.damageType 
+    : '-';
 
   // 차트 렌더용 데이터 포맷
-  const chartData = currentStats.map((item) => ({
+  const chartData = stats.map((item) => ({
     name: item.damageType,
     count: item.count,
     fullName: typeMap[item.damageType] || item.damageType,
@@ -113,13 +100,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
     }
     return new Date(isoString).toLocaleDateString('ko-KR');
   };
-
-  // 모의 유지보수 일정 테이블용
-  const mockSchedule = [
-    { id: '#RP-9821', location: '서울시 강남구 논현동 102-1', type: 'D20', priority: '긴급', assign: '박현우 과장', status: '승인 대기' },
-    { id: '#RP-9819', location: '서울시 서초구 방배로 45', type: 'D00', priority: '보통', assign: '이민정 대리', status: '작업 중' },
-    { id: '#RP-9788', location: '서울시 영등포구 국제금융로 10', type: 'D40', priority: '최우선', assign: '정승호 선임', status: '현장 조사' },
-  ];
 
   if (loading) {
     return (
@@ -277,47 +257,54 @@ export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
             </button>
           </div>
           <div className="space-y-sm flex-grow">
-            {currentDamages.slice(0, 3).map((damage) => (
-              <div
-                key={damage.id}
-                onClick={() => navigate('/damages')}
-                className="flex items-center gap-md p-md rounded-lg hover:bg-surface-container-low transition-colors border border-transparent hover:border-outline-variant cursor-pointer group"
-              >
-                <div className="w-12 h-12 rounded bg-surface-variant overflow-hidden flex-shrink-0">
-                  <img
-                    alt="도로 피해 이미지"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                    src={
-                      damage.damageType === 'D40'
-                        ? 'https://lh3.googleusercontent.com/aida-public/AB6AXuB5hxxHDoL0x8RW8qGMEbJv3NmTwaNNmJf09Tcrk_aBdTq36A4EV7w4glprnw8C7w1me0Ha5GXwmJiz82KzdhvShJ4qb9dFWodKLwOpAZdhD9rO19nCVibMChTWCxiuzyB6C2RVdsZf_AnoLiUXKiV8NzcYJMaiS4PCWqjjTsT8NI0tex6Lx3A2VUEB7VB5NuvAbBORp8jj4PlECMjHiSQANaN7nFyIFlcL1TK_eoHkawWNGNixNBq2aniSznuitdFfUlxofXErgCs'
-                        : damage.damageType === 'D20'
-                        ? 'https://lh3.googleusercontent.com/aida-public/AB6AXuC_Nv0uM6W2T2IhucAZ0SUVyBxdtY-uUPx3bYobGIRfDHLrcviMcaXQ9rQQc2-VVdt77JuyedbQc7Hc66QUtBp9PI-O7vKG_xWQaJ1DywDTwDgKuVdyvgG5F2zGsb9bVDJ61Yt_rMYy-BKqQRsbp3BvoSOLDpKAYL5VSqu3mg9AxL3tvVVAE9V3X3d7dLSSk8stwHEf6MwmmVCKCPN9VGhtEdqJYTlKoFvDpyCsXmLiIrcouEYCzS2Wc3MLvKum4TgbiJsWCXhZg0A'
-                        : 'https://lh3.googleusercontent.com/aida-public/AB6AXuBrrqVXkiM1ElZNV_jRWJWfKh0dT9OH_7ucO4t8RGqMS_5X6lOJYyoEhH0jG_E15cOlZgcLHLSM7zxOPjEKsULw15Dj18A3CAm1G6R1OdtUodNvy7bY6M7SgjXWiP7nU08WuYdT-h7BaFHRgtvospKi2gM9snJZ62d7j7UB7ynp_Hfw6XiptJ23TpxokRO4zMuW6yneAyUcjj4Qfl3b624QZp1fU8Ja1ZesryquscenTapq5pCeTxZBcNBhLyiYDfiThtlfCEfB1l8'
-                    }
-                  />
-                </div>
-                <div className="flex-grow">
-                  <p className="font-bold text-xs text-on-surface">
-                    위치: {damage.latitude.toFixed(4)}, {damage.longitude.toFixed(4)}
-                  </p>
-                  <div className="flex items-center gap-xs mt-0.5">
-                    <span
-                      className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${
+            {damages.length > 0 ? (
+              damages.slice(0, 3).map((damage) => (
+                <div
+                  key={damage.id}
+                  onClick={() => navigate('/damages')}
+                  className="flex items-center gap-md p-md rounded-lg hover:bg-surface-container-low transition-colors border border-transparent hover:border-outline-variant cursor-pointer group"
+                >
+                  <div className="w-12 h-12 rounded bg-surface-variant overflow-hidden flex-shrink-0">
+                    <img
+                      alt="도로 피해 이미지"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      src={
                         damage.damageType === 'D40'
-                          ? 'bg-error/10 text-error'
+                          ? 'https://lh3.googleusercontent.com/aida-public/AB6AXuB5hxxHDoL0x8RW8qGMEbJv3NmTwaNNmJf09Tcrk_aBdTq36A4EV7w4glprnw8C7w1me0Ha5GXwmJiz82KzdhvShJ4qb9dFWodKLwOpAZdhD9rO19nCVibMChTWCxiuzyB6C2RVdsZf_AnoLiUXKiV8NzcYJMaiS4PCWqjjTsT8NI0tex6Lx3A2VUEB7VB5NuvAbBORp8jj4PlECMjHiSQANaN7nFyIFlcL1TK_eoHkawWNGNixNBq2aniSznuitdFfUlxofXErgCs'
                           : damage.damageType === 'D20'
-                          ? 'bg-primary/10 text-primary'
-                          : 'bg-secondary-container text-on-secondary-container'
-                      }`}
-                    >
-                      {damage.damageType}
-                    </span>
-                    <span className="text-[10px] text-outline">{formatTimeAgo(damage.capturedAt)}</span>
+                          ? 'https://lh3.googleusercontent.com/aida-public/AB6AXuC_Nv0uM6W2T2IhucAZ0SUVyBxdtY-uUPx3bYobGIRfDHLrcviMcaXQ9rQQc2-VVdt77JuyedbQc7Hc66QUtBp9PI-O7vKG_xWQaJ1DywDTwDgKuVdyvgG5F2zGsb9bVDJ61Yt_rMYy-BKqQRsbp3BvoSOLDpKAYL5VSqu3mg9AxL3tvVVAE9V3X3d7dLSSk8stwHEf6MwmmVCKCPN9VGhtEdqJYTlKoFvDpyCsXmLiIrcouEYCzS2Wc3MLvKum4TgbiJsWCXhZg0A'
+                          : 'https://lh3.googleusercontent.com/aida-public/AB6AXuBrrqVXkiM1ElZNV_jRWJWfKh0dT9OH_7ucO4t8RGqMS_5X6lOJYyoEhH0jG_E15cOlZgcLHLSM7zxOPjEKsULw15Dj18A3CAm1G6R1OdtUodNvy7bY6M7SgjXWiP7nU08WuYdT-h7BaFHRgtvospKi2gM9snJZ62d7j7UB7ynp_Hfw6XiptJ23TpxokRO4zMuW6yneAyUcjj4Qfl3b624QZp1fU8Ja1ZesryquscenTapq5pCeTxZBcNBhLyiYDfiThtlfCEfB1l8'
+                      }
+                    />
                   </div>
+                  <div className="flex-grow">
+                    <p className="font-bold text-xs text-on-surface">
+                      위치: {damage.latitude.toFixed(4)}, {damage.longitude.toFixed(4)}
+                    </p>
+                    <div className="flex items-center gap-xs mt-0.5">
+                      <span
+                        className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${
+                          damage.damageType === 'D40'
+                            ? 'bg-error/10 text-error'
+                            : damage.damageType === 'D20'
+                            ? 'bg-primary/10 text-primary'
+                            : 'bg-secondary-container text-on-secondary-container'
+                        }`}
+                      >
+                        {damage.damageType}
+                      </span>
+                      <span className="text-[10px] text-outline">{formatTimeAgo(damage.capturedAt)}</span>
+                    </div>
+                  </div>
+                  <span className="material-symbols-outlined text-outline">chevron_right</span>
                 </div>
-                <span className="material-symbols-outlined text-outline">chevron_right</span>
+              ))
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-outline p-lg">
+                <span className="material-symbols-outlined text-4xl mb-xs opacity-50">data_alert</span>
+                <p className="text-xs font-semibold">최근 보고된 기록이 없습니다.</p>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>
@@ -325,7 +312,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
       {/* Maintenance Schedule Section (High Density Table) */}
       <div className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
         <div className="p-lg border-b border-outline-variant flex justify-between items-center bg-surface-container-low/30">
-          <h3 className="font-headline text-lg font-bold text-on-surface">금주 유지보수 일정</h3>
+          <h3 className="font-headline text-lg font-bold text-on-surface">최근 등록된 손상 상세 (유지보수 대기)</h3>
           <button className="p-2 border border-outline-variant rounded hover:bg-surface-container-low flex items-center justify-center">
             <span className="material-symbols-outlined text-[18px]">filter_list</span>
           </button>
@@ -335,61 +322,46 @@ export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
             <thead className="bg-surface-container-low text-on-surface-variant text-xs uppercase font-bold">
               <tr>
                 <th className="px-lg py-sm">ID</th>
-                <th className="px-lg py-sm">위치</th>
+                <th className="px-lg py-sm">위치 (위/경도)</th>
                 <th className="px-lg py-sm">피해 유형</th>
-                <th className="px-lg py-sm">우선순위</th>
-                <th className="px-lg py-sm">담당자</th>
+                <th className="px-lg py-sm">발견 일시</th>
                 <th className="px-lg py-sm">상태</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant">
-              {mockSchedule.map((row) => (
-                <tr key={row.id} className="hover:bg-primary-container/5 transition-colors">
-                  <td className="px-lg py-md font-mono text-xs font-medium text-primary">{row.id}</td>
-                  <td className="px-lg py-md text-xs text-on-surface">{row.location}</td>
-                  <td className="px-lg py-md">
-                    <span
-                      className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${
-                        row.type === 'D40'
-                          ? 'bg-error/10 text-error'
-                          : row.type === 'D20'
-                          ? 'bg-primary/10 text-primary'
-                          : 'bg-secondary-container text-on-secondary-container'
-                      }`}
-                    >
-                      {typeMap[row.type] || row.type}
-                    </span>
-                  </td>
-                  <td className="px-lg py-md">
-                    <span
-                      className={`text-xs font-bold flex items-center gap-xs ${
-                        row.priority === '최우선' || row.priority === '긴급' ? 'text-error' : 'text-on-surface-variant'
-                      }`}
-                    >
+              {damages.length > 0 ? (
+                damages.slice(0, 5).map((row) => (
+                  <tr key={row.id} className="hover:bg-primary-container/5 transition-colors">
+                    <td className="px-lg py-md font-mono text-xs font-medium text-primary">#{row.id}</td>
+                    <td className="px-lg py-md text-xs text-on-surface">{row.latitude.toFixed(5)}, {row.longitude.toFixed(5)}</td>
+                    <td className="px-lg py-md">
                       <span
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          row.priority === '최우선' || row.priority === '긴급' ? 'bg-error' : 'bg-outline'
+                        className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${
+                          row.damageType === 'D40'
+                            ? 'bg-error/10 text-error'
+                            : row.damageType === 'D20'
+                            ? 'bg-primary/10 text-primary'
+                            : 'bg-secondary-container text-on-secondary-container'
                         }`}
-                      ></span>
-                      {row.priority}
-                    </span>
-                  </td>
-                  <td className="px-lg py-md text-xs text-on-surface-variant">{row.assign}</td>
-                  <td className="px-lg py-md">
-                    <span
-                      className={`text-xs font-bold border px-2 py-0.5 rounded ${
-                        row.status === '작업 중'
-                          ? 'border-primary text-primary'
-                          : row.status === '현장 조사'
-                          ? 'border-green-600 text-green-600'
-                          : 'border-secondary text-secondary'
-                      }`}
-                    >
-                      {row.status}
-                    </span>
+                      >
+                        {typeMap[row.damageType] || row.damageType}
+                      </span>
+                    </td>
+                    <td className="px-lg py-md text-xs text-on-surface-variant">{new Date(row.capturedAt).toLocaleString('ko-KR')}</td>
+                    <td className="px-lg py-md">
+                      <span className="text-xs font-bold border px-2 py-0.5 rounded border-secondary text-secondary">
+                        대기 중
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="px-lg py-xl text-center text-xs text-outline">
+                    유지보수 대기 중인 항목이 없습니다.
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>

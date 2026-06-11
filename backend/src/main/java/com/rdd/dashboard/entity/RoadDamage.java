@@ -39,6 +39,18 @@ public class RoadDamage {
     private Double longitude;
 
     /**
+     * 이미지 내 파손 X 좌표
+     */
+    @Column(nullable = false)
+    private Double imageX;
+
+    /**
+     * 이미지 내 파손 Y 좌표
+     */
+    @Column(nullable = false)
+    private Double imageY;
+
+    /**
      * 캡처된 시간
      */
     @Column(nullable = false)

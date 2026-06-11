@@ -15,6 +15,8 @@ interface RoadDamage {
   damageType: string;
   latitude: number;
   longitude: number;
+  imageX: number;
+  imageY: number;
   capturedAt: string;
 }
 
@@ -33,13 +35,14 @@ function App() {
 
   // 글로벌 도로 손상 데이터 관리
   const [damages, setDamages] = useState<RoadDamage[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
   
   // 모달 제어
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newDamageType, setNewDamageType] = useState('D20');
   const [newLat, setNewLat] = useState('');
   const [newLng, setNewLng] = useState('');
+  const [newImageX, setNewImageX] = useState('');
+  const [newImageY, setNewImageY] = useState('');
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -111,7 +114,10 @@ function App() {
     e.preventDefault();
     const lat = parseFloat(newLat);
     const lng = parseFloat(newLng);
-    if (isNaN(lat) || isNaN(lng)) {
+    const imgX = parseFloat(newImageX);
+    const imgY = parseFloat(newImageY);
+
+    if (isNaN(lat) || isNaN(lng) || isNaN(imgX) || isNaN(imgY)) {
       alert('올바른 좌표를 입력하세요.');
       return;
     }
@@ -120,11 +126,15 @@ function App() {
       damageType: newDamageType,
       latitude: lat,
       longitude: lng,
+      imageX: imgX,
+      imageY: imgY,
     });
 
     setIsModalOpen(false);
     setNewLat('');
     setNewLng('');
+    setNewImageX('');
+    setNewImageY('');
   };
 
   // 보호된 라우터 (Protected Route)
@@ -149,8 +159,6 @@ function App() {
         {/* Main Content Side */}
         <div className="flex-grow ml-sidebar_width flex flex-col min-h-screen pt-16">
           <Header
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
             userName={user.name}
             userDept={user.dept}
           />
@@ -190,7 +198,7 @@ function App() {
           path="/damages"
           element={
             <ProtectedLayout>
-              <DataList searchQuery={searchQuery} />
+              <DataList />
             </ProtectedLayout>
           }
         />
@@ -268,6 +276,30 @@ function App() {
                   value={newLng}
                   onChange={(e) => setNewLng(e.target.value)}
                   placeholder="예: 126.924"
+                  className="w-full px-md py-sm bg-surface-container-low border border-outline-variant rounded-lg text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none text-on-surface"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-on-surface-variant mb-xs">이미지 내 파손 좌표 X</label>
+                <input
+                  type="text"
+                  required
+                  value={newImageX}
+                  onChange={(e) => setNewImageX(e.target.value)}
+                  placeholder="예: 320"
+                  className="w-full px-md py-sm bg-surface-container-low border border-outline-variant rounded-lg text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none text-on-surface"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-on-surface-variant mb-xs">이미지 내 파손 좌표 Y</label>
+                <input
+                  type="text"
+                  required
+                  value={newImageY}
+                  onChange={(e) => setNewImageY(e.target.value)}
+                  placeholder="예: 240"
                   className="w-full px-md py-sm bg-surface-container-low border border-outline-variant rounded-lg text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none text-on-surface"
                 />
               </div>
