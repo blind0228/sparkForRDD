@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow, MarkerClusterer } from '@react-google-maps/api';
+import { GoogleMapsOverlay } from '@deck.gl/google-maps';
+import { HeatmapLayer } from '@deck.gl/aggregation-layers';
 import { useSearchParams } from 'react-router-dom';
 import type { RoadDamageMarker } from '../types/damage';
 import { DamageDetailModal } from '../components/DamageDetailModal';
@@ -16,6 +18,7 @@ export const MapMode: React.FC<MapModeProps> = () => {
   const [zoom, setZoom] = useState(12);
   const [searchQuery, setSearchQuery] = useState('');
   const mapRef = useRef<google.maps.Map | null>(null);
+  const overlayRef = useRef<GoogleMapsOverlay | null>(null);
   const [searchParams] = useSearchParams();
   
   // 구글 맵 로더 설정
@@ -23,6 +26,46 @@ export const MapMode: React.FC<MapModeProps> = () => {
     id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
   });
+
+  // Deck.gl 오버레이 초기화 및 업데이트
+  useEffect(() => {
+    if (!isLoaded || !mapRef.current) return;
+
+    if (!overlayRef.current) {
+      overlayRef.current = new GoogleMapsOverlay({});
+      overlayRef.current.setMap(mapRef.current);
+    }
+
+    const layers = [];
+
+    // 줌 레벨이 낮을 때 Deck.gl 히트맵 레이어 추가
+    if (zoom < 10 && clusters.length > 0) {
+      layers.push(
+        new HeatmapLayer({
+          id: 'heatmap-layer',
+          data: clusters,
+          getPosition: (d: any) => [d.longitude, d.latitude],
+          getWeight: (d: any) => d.count,
+          radiusPixels: 45, // 약간 더 세밀하게 조정
+          intensity: 1.5,    // 너무 붉어지지 않도록 강도 대폭 하향
+          threshold: 0.05,  // 미세한 데이터는 연하게 처리
+          colorRange: [
+            [0, 88, 190],   // 파랑 (저밀도)
+            [34, 197, 94],  // 초록 (안전/낮음)
+            [234, 179, 8],  // 노랑
+            [249, 115, 22], // 주황
+            [183, 28, 28]   // 빨강 (고밀도)
+          ]
+        }) as any
+      );
+    }
+
+    overlayRef.current.setProps({ layers });
+
+    return () => {
+      // 컴포넌트 언마운트 시 오버레이 처리
+    };
+  }, [isLoaded, zoom, clusters]);
 
   // 지도 영역 변경 시 데이터 페칭
   const handleIdle = async () => {
@@ -50,12 +93,10 @@ export const MapMode: React.FC<MapModeProps> = () => {
     const finalMaxLat = isWorldView ? 85 : currentMaxLat;
 
     try {
-      if (currentZoom < 16) {
-        // 줌 레벨이 낮거나 중간일 때: 클러스터 요청 (히트맵 중단으로 인한 대체)
-        let gridSize = 0.1;
-        if (currentZoom < 5) gridSize = 15.0;
-        else if (currentZoom < 10) gridSize = Math.max(1.0, Math.pow(2, 11 - currentZoom) * 0.5);
-        else gridSize = Math.max(0.05, Math.pow(2, 14 - currentZoom) * 0.02);
+      if (currentZoom < 10) {
+        // 줌 레벨이 낮을 때: 히트맵 데이터 밀도를 대폭 높임 (0.5~2.0 수준으로 세밀하게)
+        let gridSize = 0.8;
+        if (currentZoom >= 5) gridSize = 0.3; 
 
         const url = `/api/damages/clusters?minLat=${finalMinLat}&minLng=${finalMinLng}&maxLat=${finalMaxLat}&maxLng=${finalMaxLng}&gridSize=${gridSize}`;
         const res = await fetch(url);
@@ -67,7 +108,7 @@ export const MapMode: React.FC<MapModeProps> = () => {
           }
         }
       } else {
-        // 아주 많이 확대했을 때만 개별 마커 (줌 16 이상)
+        // 줌 10 이상부터 개별 마커
         const url = `/api/damages/markers?minLat=${currentMinLat}&minLng=${currentMinLng}&maxLat=${currentMaxLat}&maxLng=${currentMaxLng}&limit=1000`;
         const res = await fetch(url);
         if (res.ok) {
@@ -237,7 +278,7 @@ export const MapMode: React.FC<MapModeProps> = () => {
             <div className="flex justify-between items-baseline">
               <span className="text-xs text-on-surface-variant">발견된 손상 건수:</span>
               <span className="font-display text-lg font-bold text-on-surface">
-                {(zoom < 16 
+                {(zoom < 10 
                   ? clusters.reduce((acc, c) => acc + c.count, 0) 
                   : markers.length).toLocaleString()} <span className="text-xs font-normal text-outline">건</span>
               </span>
@@ -322,7 +363,7 @@ export const MapMode: React.FC<MapModeProps> = () => {
               {(clusterer) => (
                 <>
                   {/* 개별 마커 렌더링 (줌이 높을 때) */}
-                  {markers.map((marker) => (
+                  {zoom >= 10 && markers.map((marker) => (
                     <Marker
                       key={marker.id}
                       position={{ lat: marker.latitude, lng: marker.longitude }}
@@ -335,32 +376,6 @@ export const MapMode: React.FC<MapModeProps> = () => {
                         strokeWeight: 2,
                         strokeColor: '#FFFFFF',
                         scale: 8,
-                      } : undefined}
-                    />
-                  ))}
-
-                  {/* 서버 사이드 클러스터 마커 렌더링 (줌이 낮을 때) */}
-                  {clusters.map((cluster, index) => (
-                    <Marker
-                      key={`cluster-${index}`}
-                      position={{ lat: cluster.latitude, lng: cluster.longitude }}
-                      label={{
-                        text: cluster.count > 999999 
-                          ? `${(cluster.count / 1000000).toFixed(1)}M` 
-                          : cluster.count > 999 
-                            ? `${(cluster.count / 1000).toFixed(1)}k` 
-                            : cluster.count.toString(),
-                        color: 'white',
-                        fontSize: '11px',
-                        fontWeight: 'bold',
-                      }}
-                      icon={window.google && window.google.maps ? {
-                        path: google.maps.SymbolPath.CIRCLE,
-                        fillColor: cluster.count > 10000 ? '#b71c1c' : cluster.count > 1000 ? '#e65100' : '#0058be',
-                        fillOpacity: 0.9,
-                        strokeWeight: 2,
-                        strokeColor: '#FFFFFF',
-                        scale: cluster.count > 1000 ? 30 : 22,
                       } : undefined}
                     />
                   ))}

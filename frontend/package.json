@@ -11,7 +11,12 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@deck.gl/aggregation-layers": "^9.0.0",
+    "@deck.gl/core": "^9.0.0",
+    "@deck.gl/google-maps": "^9.0.0",
+    "@deck.gl/layers": "^9.0.0",
     "@react-google-maps/api": "^2.20.8",
+    "deck.gl": "^9.0.0",
     "lucide-react": "^1.17.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
