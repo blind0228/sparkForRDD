@@ -25,10 +25,16 @@ export const AdminData: React.FC<AdminDataProps> = ({
   const [totalElements, setTotalElements] = useState(0);
   const itemsPerPage = 15;
 
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({
+    key: 'id',
+    direction: 'desc',
+  });
+
   const fetchDamages = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/damages?page=${currentPage - 1}&size=${itemsPerPage}`);
+      const sortParam = `${sortConfig.key},${sortConfig.direction}`;
+      const res = await fetch(`/api/damages?page=${currentPage - 1}&size=${itemsPerPage}&sort=${sortParam}`);
       if (res.ok) {
         const data = await res.json();
         setDamages(data.content || []);
@@ -44,7 +50,16 @@ export const AdminData: React.FC<AdminDataProps> = ({
 
   useEffect(() => {
     fetchDamages();
-  }, [currentPage]);
+  }, [currentPage, sortConfig]);
+
+  const handleSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+    setCurrentPage(1); // 정렬 변경 시 첫 페이지로 이동
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -209,10 +224,38 @@ export const AdminData: React.FC<AdminDataProps> = ({
             <table className="w-full text-left border-collapse">
               <thead className="bg-surface-container-low text-on-surface-variant text-[11px] font-bold sticky top-0 border-b border-outline-variant z-20">
                 <tr>
-                  <th className="px-md py-sm">ID</th>
-                  <th className="px-md py-sm">국가</th>
-                  <th className="px-md py-sm">위도</th>
-                  <th className="px-md py-sm">경도</th>
+                  <th 
+                    className="px-md py-sm cursor-pointer hover:bg-surface-container-high transition-colors"
+                    onClick={() => handleSort('id')}
+                  >
+                    <div className="flex items-center gap-1">
+                      ID {sortConfig.key === 'id' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+                    </div>
+                  </th>
+                  <th 
+                    className="px-md py-sm cursor-pointer hover:bg-surface-container-high transition-colors"
+                    onClick={() => handleSort('country')}
+                  >
+                    <div className="flex items-center gap-1">
+                      국가 {sortConfig.key === 'country' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+                    </div>
+                  </th>
+                  <th 
+                    className="px-md py-sm cursor-pointer hover:bg-surface-container-high transition-colors"
+                    onClick={() => handleSort('latitude')}
+                  >
+                    <div className="flex items-center gap-1">
+                      위도 {sortConfig.key === 'latitude' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+                    </div>
+                  </th>
+                  <th 
+                    className="px-md py-sm cursor-pointer hover:bg-surface-container-high transition-colors"
+                    onClick={() => handleSort('longitude')}
+                  >
+                    <div className="flex items-center gap-1">
+                      경도 {sortConfig.key === 'longitude' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+                    </div>
+                  </th>
                   <th className="px-md py-sm text-center">제어</th>
                 </tr>
               </thead>

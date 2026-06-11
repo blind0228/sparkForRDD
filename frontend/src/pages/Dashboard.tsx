@@ -157,10 +157,6 @@ export const Dashboard: React.FC<DashboardProps> = () => {
           <p className="text-on-surface-variant text-sm">실시간 도로 피해 상황 및 관리 지표입니다.</p>
         </div>
         <div className="flex gap-sm">
-          <button className="px-md py-sm bg-surface-container-lowest border border-outline-variant rounded-lg font-bold text-xs text-on-surface hover:bg-surface-container-low transition-colors flex items-center gap-xs">
-            <span className="material-symbols-outlined text-[18px]">calendar_today</span>
-            최근 30일
-          </button>
           <button 
             onClick={handleAiReportDownload}
             disabled={isGeneratingReport}
@@ -253,7 +249,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
         {/* Statistics Chart Section */}
         <div className="lg:col-span-2 bg-surface-container-lowest p-lg rounded-xl border border-outline-variant shadow-sm flex flex-col">
           <div className="flex justify-between items-center mb-md">
-            <h3 className="font-headline text-lg font-bold text-on-surface">피해 유형별 분포 (D00-D40)</h3>
+            <h3 className="font-headline text-lg font-bold text-on-surface">피해 유형별 분포 (D00-D90)</h3>
             <div className="flex items-center gap-md">
               <div className="flex items-center gap-xs">
                 <span className="w-2.5 h-2.5 rounded-full bg-primary"></span>

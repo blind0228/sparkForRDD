@@ -45,34 +45,72 @@ export const DamageDetailModal: React.FC<DamageDetailModalProps> = ({ isOpen, ma
       {/* Modal Content */}
       <div className="relative bg-surface border border-outline-variant rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col md:flex-row max-h-[90vh]">
         {/* Left Side: Image with Bounding Boxes */}
-        <div className="relative flex-grow bg-black flex items-center justify-center overflow-hidden min-h-[300px] md:min-h-0">
-          <img 
-            src={marker.imageUrl || `/images/${marker.imageFileName}`} 
-            alt="Road Damage" 
-            className="max-w-full max-h-full object-contain"
-          />
-          
-          {/* Bounding Boxes */}
-          {!loading && labels.map((label) => (
-            <div
-              key={label.id}
-              className="absolute border-2 border-red-500 bg-red-500/10 pointer-events-none"
-              style={{
-                left: `${(label.xCenter - label.bboxWidth / 2) * 100}%`,
-                top: `${(label.yCenter - label.bboxHeight / 2) * 100}%`,
-                width: `${label.bboxWidth * 100}%`,
-                height: `${label.bboxHeight * 100}%`,
+        <div className="relative flex-grow bg-black flex items-center justify-center overflow-hidden min-h-[400px] md:min-h-0">
+          {/* 이미지 크기에 100% 밀착되는 컨테이너 */}
+          <div className="relative inline-block">
+            <img 
+              src={marker.imageUrl} 
+              alt="Road Damage" 
+              className="block max-w-full max-h-[80vh] w-auto h-auto"
+              onLoad={(e) => {
+                const img = e.currentTarget;
+                console.log("Image Loaded:", {
+                  naturalWidth: img.naturalWidth,
+                  naturalHeight: img.naturalHeight,
+                  renderedWidth: img.clientWidth,
+                  renderedHeight: img.clientHeight
+                });
               }}
-            >
-              <span className="absolute -top-6 left-0 bg-red-500 text-white text-[10px] px-1 font-bold rounded">
-                {label.damageCode}
-              </span>
-            </div>
-          ))}
+              onError={(e) => {
+                console.error("Image load failed for URL:", marker.imageUrl);
+                const fallbackUrl = `/images/${marker.imageFileName || marker.fileName?.replace('.txt', '.jpg')}`;
+                if (e.currentTarget.src !== window.location.origin + fallbackUrl) {
+                  e.currentTarget.src = fallbackUrl;
+                }
+              }}
+            />
+            
+            {/* Bounding Boxes */}
+            {!loading && labels.map((label) => {
+              // API 응답 필드명이 대소문자 혼용될 경우를 대비
+              const x = label.xCenter !== undefined ? label.xCenter : (label as any).xcenter;
+              const y = label.yCenter !== undefined ? label.yCenter : (label as any).ycenter;
+              const w = label.bboxWidth;
+              const h = label.bboxHeight;
+
+              if (x === undefined || y === undefined || w === undefined || h === undefined) {
+                return null;
+              }
+
+              // YOLO (center) to CSS (top-left) conversion
+              const left = (x - w / 2) * 100;
+              const top = (y - h / 2) * 100;
+              const width = w * 100;
+              const height = h * 100;
+
+              return (
+                <div
+                  key={label.id}
+                  className="absolute border-2 border-red-500 bg-red-500/10 pointer-events-none group"
+                  style={{
+                    left: `${left}%`,
+                    top: `${top}%`,
+                    width: `${width}%`,
+                    height: `${height}%`,
+                    zIndex: 20
+                  }}
+                >
+                  <span className="absolute -top-6 left-0 bg-red-500 text-white text-[10px] px-1 font-bold rounded whitespace-nowrap shadow-sm z-30">
+                    {label.damageCode}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
 
           {loading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40 z-40">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white"></div>
             </div>
           )}
         </div>
