@@ -8,3 +8,11 @@
 - RoadDamage 엔티티 및 리포지토리 구현 (TDD 적용)
 - Gradle Wrapper (gradlew) 생성 및 설정
 - REST API 컨트롤러 (/api/damages, /api/damages/stats) 구현 (TDD 적용)
+- Swagger UI (SpringDoc OpenAPI) 도입 및 API 문서화
+- 헬스 체크 API (/api/health) 추가
+- 공식 API 명세서 (docs/api-spec.md) 작성
+- 세션 기반 로그인 인증 (Spring Security) 구현 (ID: admin@example.com, PW: 1234)
+- API 보안 적용 (인증된 사용자만 접근 가능, Health API 및 Swagger 제외)
+- 도로 손상 데이터 등록(POST) 및 삭제(DELETE) API 추가
+- Stitch MCP 디자인 가이드를 반영한 프론트엔드-백엔드 연동 및 통합 테스트 수행
+- 데이터베이스 기반 사용자 관리(회원가입, 조회, 삭제) 백엔드 API 추가 및 프론트엔드 연동
