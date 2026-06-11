@@ -67,8 +67,9 @@ export const Analytics: React.FC = () => {
     D40: '#ba1a1a',
   };
 
-  const totalMarkers = countryStats.reduce((acc, c) => acc + c.count, 0);
-  const totalLabels = typeStats.reduce((acc, t) => acc + t.count, 0);
+  const totalMarkers = countryStats.reduce((acc, c) => acc + (c.count || 0), 0);
+  const totalLabels = typeStats.reduce((acc, t) => acc + (t.count || 0), 0);
+  const avgDamagePerMarker = totalMarkers > 0 ? (totalLabels / totalMarkers).toFixed(2) : '0.00';
 
   if (loading) {
     return (
@@ -78,6 +79,8 @@ export const Analytics: React.FC = () => {
     );
   }
 
+  const hasData = totalMarkers > 0 || totalLabels > 0;
+
   return (
     <div className="p-lg space-y-lg bg-surface-container-lowest min-h-full pb-2xl">
       <div className="flex justify-between items-end">
@@ -86,6 +89,14 @@ export const Analytics: React.FC = () => {
           <p className="text-on-surface-variant text-sm">글로벌 도로 손상 현황에 대한 다각도 시각적 인사이트를 제공합니다.</p>
         </div>
       </div>
+
+      {!hasData && (
+        <div className="bg-surface-container-low p-2xl rounded-2xl border border-dashed border-outline text-center">
+          <span className="material-symbols-outlined text-4xl text-outline mb-md">data_alert</span>
+          <h3 className="text-lg font-bold text-on-surface">표시할 데이터가 없습니다.</h3>
+          <p className="text-on-surface-variant text-sm mt-sm">시스템에 수집된 도로 손상 데이터가 없어 분석 정보를 생성할 수 없습니다.</p>
+        </div>
+      )}
 
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
@@ -99,7 +110,7 @@ export const Analytics: React.FC = () => {
         </div>
         <div className="bg-surface p-md rounded-xl border border-outline-variant shadow-sm">
           <p className="text-[10px] font-bold text-outline uppercase">지점당 평균 파손</p>
-          <p className="text-2xl font-display font-bold text-on-surface mt-xs">{(totalLabels / totalMarkers).toFixed(2)}<span className="text-xs font-normal ml-1">개</span></p>
+          <p className="text-2xl font-display font-bold text-on-surface mt-xs">{avgDamagePerMarker}<span className="text-xs font-normal ml-1">개</span></p>
         </div>
         <div className="bg-surface p-md rounded-xl border border-outline-variant shadow-sm">
           <p className="text-[10px] font-bold text-outline uppercase">최다 발생 국가</p>
@@ -107,9 +118,10 @@ export const Analytics: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
-        {/* Trend Composed Chart */}
-        <div className="bg-surface p-lg rounded-2xl border border-outline-variant shadow-sm flex flex-col h-[400px] lg:col-span-2">
+      {hasData && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+          {/* Trend Composed Chart */}
+          <div className="bg-surface p-lg rounded-2xl border border-outline-variant shadow-sm flex flex-col h-[400px] lg:col-span-2">
           <h3 className="font-display text-md font-bold mb-md text-on-surface">일별 감지 추세 및 누적 성장</h3>
           <div className="flex-grow">
             <ResponsiveContainer width="100%" height="100%">
@@ -236,6 +248,7 @@ export const Analytics: React.FC = () => {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 };

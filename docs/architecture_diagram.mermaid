@@ -1,0 +1,52 @@
+graph TD
+    %% Define Styles
+    classDef spark fill:#E25A1C,stroke:#333,stroke-width:2px,color:white;
+    classDef db fill:#336791,stroke:#333,stroke-width:2px,color:white;
+    classDef backend fill:#6DB33F,stroke:#333,stroke-width:2px,color:white;
+    classDef frontend fill:#61DAFB,stroke:#333,stroke-width:2px,color:black;
+    classDef external fill:#F3F4F6,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5;
+
+    %% Data Source & Pipeline
+    subgraph Data Pipeline
+        Spark[Apache Spark<br/>Data Preprocessing]:::spark
+        RDD_Data[(RDD2024 Dataset)]
+        Spark --> |Batch JDBC Write| DB
+        RDD_Data --> Spark
+    end
+
+    %% Database
+    DB[(PostgreSQL + PostGIS<br/>road_damage_markers<br/>road_damage_labels)]:::db
+
+    %% Backend Layer
+    subgraph Spring Boot Backend
+        API_Layer[REST APIs<br/>Controllers]:::backend
+        Service_Layer[Business Logic<br/>Services]:::backend
+        GeoTools[GeoTools<br/>Spatial Filtering]:::backend
+        JPA[Spring Data JPA<br/>Repositories]:::backend
+        
+        API_Layer --> Service_Layer
+        Service_Layer --> GeoTools
+        Service_Layer --> JPA
+    end
+
+    %% Frontend Layer
+    subgraph React Frontend
+        Vite[Vite + TypeScript]:::frontend
+        DeckGL[Deck.gl<br/>Heatmap / Large Data]:::frontend
+        GoogleMaps[Google Maps API<br/>Base Map / Detail View]:::frontend
+        UI_Components[Tailwind CSS<br/>UI Components]:::frontend
+        
+        Vite --> DeckGL
+        Vite --> GoogleMaps
+        Vite --> UI_Components
+    end
+
+    %% External Services
+    OpenAI[OpenAI API<br/>GPT-3.5/4]:::external
+    LocalFilesystem[Local Filesystem<br/>Image Streaming]:::external
+
+    %% Connections
+    DB <--> |Query Data| JPA
+    Vite <--> |Fetch Data| API_Layer
+    Service_Layer <--> |Generate AI Report| OpenAI
+    Vite <--> |Stream Images| LocalFilesystem

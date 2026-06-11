@@ -249,7 +249,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
         {/* Statistics Chart Section */}
         <div className="lg:col-span-2 bg-surface-container-lowest p-lg rounded-xl border border-outline-variant shadow-sm flex flex-col">
           <div className="flex justify-between items-center mb-md">
-            <h3 className="font-headline text-lg font-bold text-on-surface">피해 유형별 분포 (D00-D40)</h3>
+            <h3 className="font-headline text-lg font-bold text-on-surface">피해 유형별 분포 (D00-D90)</h3>
             <div className="flex items-center gap-md">
               <div className="flex items-center gap-xs">
                 <span className="w-2.5 h-2.5 rounded-full bg-primary"></span>

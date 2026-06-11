@@ -1,5 +1,11 @@
 # 변경 이력 (Changelog)
 
+## [2026-06-08]
+### 수정 및 최신화
+- 공식 API 명세서 (`docs/api-spec.md`) 최신화: 통계 API, 사용자 관리 API, AI 보고서 생성 API 내용 추가 반영
+- 프로젝트 전반의 문서(`README.md`, `DESIGN.md`) 검토 및 실제 코드 스택(React 19, Vite 8, Tailwind V4, PostgreSQL)과 불일치 사항 동기화 완료
+- H2 기반에서 PostgreSQL 환경으로의 전환 기록 명확화
+
 ## [2026-06-01]
 ### 추가
 - 백엔드 프로젝트 초기화 (Spring Boot 3.3.0, Java 17, Gradle)

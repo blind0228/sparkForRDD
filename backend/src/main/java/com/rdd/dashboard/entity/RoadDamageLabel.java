@@ -6,7 +6,9 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "road_damage_labels")
+@Table(name = "road_damage_labels", indexes = {
+    @Index(name = "idx_label_file_name", columnList = "file_name")
+})
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class RoadDamageLabel {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)

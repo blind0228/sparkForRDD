@@ -7,7 +7,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "road_damage_markers")
+@Table(name = "road_damage_markers", indexes = {
+    @Index(name = "idx_marker_file_name", columnList = "fileName")
+})
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class RoadDamageMarker {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
