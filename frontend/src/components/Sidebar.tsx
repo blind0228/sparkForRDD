@@ -20,6 +20,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNewReportClick, onLogout, us
     { to: '/', label: '대시보드', icon: 'dashboard' },
     { to: '/map', label: '지도', icon: 'map' },
     { to: '/damages', label: '피해 데이터', icon: 'list_alt' },
+    { to: '/analytics', label: '데이터 분석', icon: 'bar_chart' },
   ];
 
   // 관리자용 메뉴 추가
