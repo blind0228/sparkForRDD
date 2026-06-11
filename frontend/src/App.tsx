@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
@@ -9,16 +9,6 @@ import { MapMode } from './pages/MapMode';
 import { DataList } from './pages/DataList';
 import { AdminData } from './pages/AdminData';
 import { AdminUsers } from './pages/AdminUsers';
-
-interface RoadDamage {
-  id: number;
-  damageType: string;
-  latitude: number;
-  longitude: number;
-  imageX: number;
-  imageY: number;
-  capturedAt: string;
-}
 
 interface UserSession {
   name: string;
@@ -33,9 +23,6 @@ function App() {
     return saved ? JSON.parse(saved) : null;
   });
 
-  // 글로벌 도로 손상 데이터 관리
-  const [damages, setDamages] = useState<RoadDamage[]>([]);
-  
   // 모달 제어
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newDamageType, setNewDamageType] = useState('D20');
@@ -43,21 +30,6 @@ function App() {
   const [newLng, setNewLng] = useState('');
   const [newImageX, setNewImageX] = useState('');
   const [newImageY, setNewImageY] = useState('');
-
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        const res = await fetch('/api/damages');
-        if (res.ok) {
-          const data = await res.json();
-          setDamages(data);
-        }
-      } catch (error) {
-        console.error('API 연동 실패: 로컬 가상 데이터를 사용합니다.', error);
-      }
-    };
-    fetchInitialData();
-  }, []);
 
   const handleLogin = (session: UserSession) => {
     setUser(session);
@@ -75,7 +47,7 @@ function App() {
   };
 
   // 데이터 추가 핸들러
-  const handleAddDamage = async (newD: Omit<RoadDamage, 'id' | 'capturedAt'>) => {
+  const handleAddDamage = async (newD: any) => {
     try {
       const res = await fetch('/api/damages', {
         method: 'POST',
@@ -86,8 +58,7 @@ function App() {
       });
 
       if (res.ok) {
-        const created = await res.json();
-        setDamages([created, ...damages]);
+        // 데이터 추가 성공
       }
     } catch (error) {
       console.error('데이터 저장 실패:', error);
@@ -102,7 +73,7 @@ function App() {
       });
 
       if (res.ok) {
-        setDamages(damages.filter(d => d.id !== id));
+        // 데이터 삭제 성공
       }
     } catch (error) {
       console.error('데이터 삭제 실패:', error);
@@ -182,7 +153,7 @@ function App() {
           path="/"
           element={
             <ProtectedLayout>
-              <Dashboard damages={damages} />
+              <Dashboard />
             </ProtectedLayout>
           }
         />
@@ -207,13 +178,13 @@ function App() {
           element={
             <ProtectedLayout requireAdmin={true}>
               <AdminData
-                damages={damages}
                 onAddDamage={handleAddDamage}
                 onDeleteDamage={handleDeleteDamage}
               />
             </ProtectedLayout>
           }
         />
+
         <Route
           path="/admin/users"
           element={

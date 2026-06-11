@@ -10,9 +10,9 @@
 - **최근 보고**: 최신 발견된 도로 손상 내역 실시간 리스트.
 
 ### 2. GIS 관제 지도
-- **위치 시각화**: 데이터베이스의 GPS 좌표를 기반으로 지도 위에 손상 위치 마커 표시.
-- **필터링**: 특정 손상 유형별로 지도 마커를 필터링하여 확인 가능.
-- **상세 정보**: 마커 클릭 시 해당 위치의 위/경도 및 감지 시간 확인.
+- **하이브리드 시각화 엔진**: 줌 레벨에 따라 히트맵(Heatmap), 클러스터(Cluster), 개별 마커(Marker) 모드로 자동 전환되어 최적의 시각적 경험 제공.
+- **PostGIS 성능 최적화**: PostgreSQL의 PostGIS 공간 인덱스를 활용하여 수백만 건의 데이터도 버벅임 없이 실시간 뷰포트 필터링(Viewport Filtering) 조회 가능.
+- **상세 정보 (GIS Modal)**: 마커 클릭 시 나타나는 상세 모달에서 원본 이미지와 함께 YOLO 형식의 바운딩 박스(Bounding Box) 오버레이를 통해 정확한 손상 위치 및 유형 확인 가능.
 
 ### 3. 데이터 및 권한 관리
 - **로그인/보안**: 세션 기반 인증(Spring Security) 적용 (관리자 계정: `admin@example.com` / `1234`).
@@ -25,7 +25,8 @@
 - **Framework**: Spring Boot 3.3.0
 - **Language**: Java 17
 - **Security**: Spring Security (Session-based Auth)
-- **Data**: Spring Data JPA, H2 (Dev/Test), MySQL (Prod Ready)
+- **Data**: Spring Data JPA, PostgreSQL (Render Managed)
+- **Environment**: Dotenv-Java for credential management
 - **API Docs**: SpringDoc OpenAPI (Swagger UI)
 
 ### Frontend
@@ -50,6 +51,7 @@
 ### 사전 준비 사항 (Prerequisites)
 - **Java 17** 이상이 설치되어 있어야 합니다.
 - **Node.js** (v18 이상 권장) 및 **npm**이 설치되어 있어야 합니다.
+- **PostgreSQL + PostGIS**: 데이터베이스에 `PostGIS` 확장 기능이 활성화되어 있어야 합니다. (`CREATE EXTENSION postgis;`)
 - (선택 사항) 실제 구글 지도를 보려면 구글 클라우드 콘솔에서 Maps JavaScript API 키를 발급받아야 합니다.
 
 ### Step 1: 구글 지도 API 키 설정 (Frontend)
@@ -62,12 +64,16 @@
    *(API 키가 없어도 시스템은 동작하나, 지도는 로딩 화면 상태로 유지됩니다.)*
 
 ### Step 2: Backend (Spring Boot) 서버 실행
-백엔드 서버는 기본적으로 `8080` 포트를 사용하며, 인메모리 DB(H2)를 사용하여 별도의 DB 설치 없이 바로 실행됩니다.
-1. 터미널을 열고 프로젝트 루트에서 `backend` 디렉토리로 이동합니다.
-   ```bash
-   cd backend
+백엔드 서버는 기본적으로 `8080` 포트를 사용하며, 운영용 PostgreSQL DB(Render)와 연동됩니다. 보안을 위해 환경 변수 설정이 필요합니다.
+
+1. `backend/` 디렉토리로 이동합니다.
+2. `.env` 파일을 생성하고 제공받은 DB 접속 정보를 입력합니다. (이미 생성되어 있다면 확인만 하십시오.)
+   ```env
+   DB_URL=jdbc:postgresql://[HOST]:[PORT]/[DB_NAME]
+   DB_USERNAME=[USERNAME]
+   DB_PASSWORD=[PASSWORD]
    ```
-2. Gradle Wrapper를 사용하여 서버를 실행합니다.
+3. Gradle Wrapper를 사용하여 서버를 실행합니다.
    ```bash
    # Mac / Linux
    ./gradlew bootRun
@@ -75,7 +81,7 @@
    # Windows
    gradlew.bat bootRun
    ```
-3. 서버가 정상적으로 실행되면 브라우저에서 아래 주소로 접속하여 API 명세서를 확인할 수 있습니다.
+4. 서버가 정상적으로 실행되면 브라우저에서 아래 주소로 접속하여 API 명세서를 확인할 수 있습니다.
    - **Swagger UI**: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
 
 ### Step 3: Frontend (React) 서버 실행

@@ -1,32 +1,40 @@
-import React, { useState } from 'react';
-
-interface RoadDamage {
-  id: number;
-  damageType: string;
-  latitude: number;
-  longitude: number;
-  imageX: number;
-  imageY: number;
-  capturedAt: string;
-}
+import React, { useState, useEffect } from 'react';
+import type { RoadDamageMarker } from '../types/damage';
 
 interface AdminDataProps {
-  damages: RoadDamage[];
-  onAddDamage: (damage: Omit<RoadDamage, 'id' | 'capturedAt'>) => void;
+  onAddDamage: (damage: any) => void;
   onDeleteDamage: (id: number) => void;
 }
 
 export const AdminData: React.FC<AdminDataProps> = ({
-  damages,
   onAddDamage,
   onDeleteDamage,
 }) => {
+  const [damages, setDamages] = useState<RoadDamageMarker[]>([]);
+  const [loading, setLoading] = useState(true);
   const [damageType, setDamageType] = useState('D00');
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
   const [imageX, setImageX] = useState('');
   const [imageY, setImageY] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  useEffect(() => {
+    const fetchDamages = async () => {
+      try {
+        const res = await fetch('/api/damages/markers?limit=50');
+        if (res.ok) {
+          const data = await res.json();
+          setDamages(data);
+        }
+      } catch (error) {
+        console.error('데이터 조회 실패:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDamages();
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,6 +66,14 @@ export const AdminData: React.FC<AdminDataProps> = ({
       setSuccessMsg('');
     }, 3000);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px] w-full">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
 
   return (
@@ -162,7 +178,7 @@ export const AdminData: React.FC<AdminDataProps> = ({
               <thead className="bg-surface-container-low text-on-surface-variant text-[11px] font-bold sticky top-0 border-b border-outline-variant">
                 <tr>
                   <th className="px-md py-sm">ID</th>
-                  <th className="px-md py-sm">유형</th>
+                  <th className="px-md py-sm">파일명</th>
                   <th className="px-md py-sm">위도</th>
                   <th className="px-md py-sm">경도</th>
                   <th className="px-md py-sm">제어</th>
@@ -173,7 +189,7 @@ export const AdminData: React.FC<AdminDataProps> = ({
                   <tr key={d.id} className="hover:bg-primary-container/5 transition-colors">
                     <td className="px-md py-xs font-mono text-[11px] text-primary">#{d.id}</td>
                     <td className="px-md py-xs text-[11px]">
-                      <span className="font-semibold text-on-surface-variant">{d.damageType}</span>
+                      <span className="font-semibold text-on-surface-variant">{d.fileName}</span>
                     </td>
                     <td className="px-md py-xs font-mono text-[11px] text-on-surface">{d.latitude.toFixed(4)}</td>
                     <td className="px-md py-xs font-mono text-[11px] text-on-surface">{d.longitude.toFixed(4)}</td>
@@ -182,6 +198,7 @@ export const AdminData: React.FC<AdminDataProps> = ({
                         onClick={() => {
                           if (confirm(`손상 정보 #${d.id}번을 정말 삭제하시겠습니까?`)) {
                             onDeleteDamage(d.id);
+                            setDamages(damages.filter(item => item.id !== d.id));
                           }
                         }}
                         className="text-error hover:underline text-[11px] font-bold"

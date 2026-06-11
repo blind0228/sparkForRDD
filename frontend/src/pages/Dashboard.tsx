@@ -10,28 +10,21 @@ import {
   Cell,
 } from 'recharts';
 
-interface RoadDamage {
-  id: number;
-  damageType: string;
-  latitude: number;
-  longitude: number;
-  imageX: number;
-  imageY: number;
-  capturedAt: string;
-}
+import type { RoadDamageMarker, DamageStats } from '../types/damage';
 
-interface DamageStats {
-  damageType: string;
+interface CountryStats {
+  country: string;
   count: number;
 }
 
 interface DashboardProps {
-  damages: RoadDamage[];
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
+export const Dashboard: React.FC<DashboardProps> = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState<DamageStats[]>([]);
+  const [countryStats, setCountryStats] = useState<CountryStats[]>([]);
+  const [recentMarkers, setRecentMarkers] = useState<RoadDamageMarker[]>([]);
   const [loading, setLoading] = useState(true);
 
   // 대미지 타입 한국어 매핑
@@ -45,27 +38,47 @@ export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const statsRes = await fetch('/api/damages/stats');
+        const [statsRes, countryStatsRes, recentRes] = await Promise.all([
+          fetch('/api/damages/stats/types'),
+          fetch('/api/damages/stats/countries'),
+          fetch('/api/damages/markers?limit=10')
+        ]);
 
         if (statsRes.ok) {
           const statsData = await statsRes.json();
           setStats(statsData);
         }
+        if (countryStatsRes.ok) {
+          const countryData = await countryStatsRes.json();
+          setCountryStats(countryData);
+        }
+        if (recentRes.ok) {
+          const recentData = await recentRes.json();
+          setRecentMarkers(recentData);
+        }
       } catch (error) {
-        console.error('API 호출 중 오류가 발생했습니다. 모의 데이터를 로드합니다.', error);
+        console.error('API 호출 중 오류가 발생했습니다.', error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [damages]);
+  }, []);
 
   // 전체 건수 계산
   const totalDamages = stats.reduce((sum, item) => sum + item.count, 0);
 
-  // 고위험 구역 계산 (D40)
-  const highRiskCount = stats.find((item) => item.damageType === 'D40')?.count || 0;
+  // 건수 포맷터 (1k 단위)
+  const formatCount = (num: number) => {
+    if (num >= 1000) {
+      return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+    }
+    return num.toLocaleString();
+  };
+
+  // 고위험 국가 계산 (피해가 가장 많은 국가)
+  const highRiskCountry = countryStats.length > 0 ? countryStats[0] : null;
 
   // 최다 발생 유형
   const mostFrequentType = stats.length > 0 
@@ -76,7 +89,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
   const chartData = stats.map((item) => ({
     name: item.damageType,
     count: item.count,
-    fullName: typeMap[item.damageType] || item.damageType,
+    fullName: item.damageName || typeMap[item.damageType] || item.damageType,
   }));
 
   const COLORS = {
@@ -142,8 +155,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
             </span>
           </div>
           <p className="text-on-surface-variant text-xs font-bold">전체 피해 발견 건수</p>
-          <p className="font-display text-3xl font-bold text-on-surface mt-xs">
-            {totalDamages.toLocaleString()}{' '}
+          <p className="font-display text-3xl font-bold text-on-surface mt-xs" title={totalDamages.toLocaleString() + " 건"}>
+            {formatCount(totalDamages)}{' '}
             <span className="text-sm font-normal text-outline">건</span>
           </p>
         </div>
@@ -152,16 +165,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
         <div className="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant shadow-sm hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start mb-md">
             <div className="p-2 bg-error/10 text-error rounded-lg flex items-center justify-center">
-              <span className="material-symbols-outlined">error</span>
+              <span className="material-symbols-outlined">public</span>
             </div>
-            <span className="text-error text-[11px] font-bold bg-red-100 dark:bg-red-950 px-2 py-0.5 rounded-full">
-              긴급 {highRiskCount}건
-            </span>
+            {highRiskCountry && (
+              <span className="text-error text-[11px] font-bold bg-red-100 dark:bg-red-950 px-2 py-0.5 rounded-full">
+                위험도 높음
+              </span>
+            )}
           </div>
-          <p className="text-on-surface-variant text-xs font-bold">고위험 지역 (D40)</p>
-          <p className="font-display text-3xl font-bold text-on-surface mt-xs">
-            {highRiskCount}{' '}
-            <span className="text-sm font-normal text-outline">구역</span>
+          <p className="text-on-surface-variant text-xs font-bold">고위험 국가 (최다 발생)</p>
+          <p className="font-display text-2xl font-bold text-on-surface mt-xs">
+            {highRiskCountry ? highRiskCountry.country : '-'}{' '}
+            <span className="text-sm font-normal text-outline">({highRiskCountry ? highRiskCountry.count : 0}건)</span>
           </p>
         </div>
 
@@ -198,6 +213,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
           </div>
         </div>
       </div>
+
+      <p className="text-[10px] text-outline mt-2 italic">* 본 위치 정보는 시각화를 위한 가상 데이터이며 실제 촬영 위치와 다를 수 있습니다.</p>
 
       {/* Statistics & Records Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
@@ -257,8 +274,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
             </button>
           </div>
           <div className="space-y-sm flex-grow">
-            {damages.length > 0 ? (
-              damages.slice(0, 3).map((damage) => (
+            {recentMarkers.length > 0 ? (
+              recentMarkers.slice(0, 3).map((damage) => (
                 <div
                   key={damage.id}
                   onClick={() => navigate('/damages')}
@@ -268,13 +285,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
                     <img
                       alt="도로 피해 이미지"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                      src={
-                        damage.damageType === 'D40'
-                          ? 'https://lh3.googleusercontent.com/aida-public/AB6AXuB5hxxHDoL0x8RW8qGMEbJv3NmTwaNNmJf09Tcrk_aBdTq36A4EV7w4glprnw8C7w1me0Ha5GXwmJiz82KzdhvShJ4qb9dFWodKLwOpAZdhD9rO19nCVibMChTWCxiuzyB6C2RVdsZf_AnoLiUXKiV8NzcYJMaiS4PCWqjjTsT8NI0tex6Lx3A2VUEB7VB5NuvAbBORp8jj4PlECMjHiSQANaN7nFyIFlcL1TK_eoHkawWNGNixNBq2aniSznuitdFfUlxofXErgCs'
-                          : damage.damageType === 'D20'
-                          ? 'https://lh3.googleusercontent.com/aida-public/AB6AXuC_Nv0uM6W2T2IhucAZ0SUVyBxdtY-uUPx3bYobGIRfDHLrcviMcaXQ9rQQc2-VVdt77JuyedbQc7Hc66QUtBp9PI-O7vKG_xWQaJ1DywDTwDgKuVdyvgG5F2zGsb9bVDJ61Yt_rMYy-BKqQRsbp3BvoSOLDpKAYL5VSqu3mg9AxL3tvVVAE9V3X3d7dLSSk8stwHEf6MwmmVCKCPN9VGhtEdqJYTlKoFvDpyCsXmLiIrcouEYCzS2Wc3MLvKum4TgbiJsWCXhZg0A'
-                          : 'https://lh3.googleusercontent.com/aida-public/AB6AXuBrrqVXkiM1ElZNV_jRWJWfKh0dT9OH_7ucO4t8RGqMS_5X6lOJYyoEhH0jG_E15cOlZgcLHLSM7zxOPjEKsULw15Dj18A3CAm1G6R1OdtUodNvy7bY6M7SgjXWiP7nU08WuYdT-h7BaFHRgtvospKi2gM9snJZ62d7j7UB7ynp_Hfw6XiptJ23TpxokRO4zMuW6yneAyUcjj4Qfl3b624QZp1fU8Ja1ZesryquscenTapq5pCeTxZBcNBhLyiYDfiThtlfCEfB1l8'
-                      }
+                      src={damage.imageUrl || `/images/${damage.imageFileName}`}
                     />
                   </div>
                   <div className="flex-grow">
@@ -282,18 +293,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
                       위치: {damage.latitude.toFixed(4)}, {damage.longitude.toFixed(4)}
                     </p>
                     <div className="flex items-center gap-xs mt-0.5">
-                      <span
-                        className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${
-                          damage.damageType === 'D40'
-                            ? 'bg-error/10 text-error'
-                            : damage.damageType === 'D20'
-                            ? 'bg-primary/10 text-primary'
-                            : 'bg-secondary-container text-on-secondary-container'
-                        }`}
-                      >
-                        {damage.damageType}
+                      <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-secondary-container text-on-secondary-container">
+                        {damage.country}
                       </span>
-                      <span className="text-[10px] text-outline">{formatTimeAgo(damage.capturedAt)}</span>
+                      <span className="text-[10px] text-outline">{formatTimeAgo(damage.createdAt)}</span>
                     </div>
                   </div>
                   <span className="material-symbols-outlined text-outline">chevron_right</span>
@@ -323,36 +326,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ damages }) => {
               <tr>
                 <th className="px-lg py-sm">ID</th>
                 <th className="px-lg py-sm">위치 (위/경도)</th>
-                <th className="px-lg py-sm">피해 유형</th>
+                <th className="px-lg py-sm">국가</th>
+                <th className="px-lg py-sm">피해 건수</th>
                 <th className="px-lg py-sm">발견 일시</th>
-                <th className="px-lg py-sm">상태</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant">
-              {damages.length > 0 ? (
-                damages.slice(0, 5).map((row) => (
+              {recentMarkers.length > 0 ? (
+                recentMarkers.slice(0, 5).map((row) => (
                   <tr key={row.id} className="hover:bg-primary-container/5 transition-colors">
                     <td className="px-lg py-md font-mono text-xs font-medium text-primary">#{row.id}</td>
                     <td className="px-lg py-md text-xs text-on-surface">{row.latitude.toFixed(5)}, {row.longitude.toFixed(5)}</td>
-                    <td className="px-lg py-md">
-                      <span
-                        className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${
-                          row.damageType === 'D40'
-                            ? 'bg-error/10 text-error'
-                            : row.damageType === 'D20'
-                            ? 'bg-primary/10 text-primary'
-                            : 'bg-secondary-container text-on-secondary-container'
-                        }`}
-                      >
-                        {typeMap[row.damageType] || row.damageType}
-                      </span>
-                    </td>
-                    <td className="px-lg py-md text-xs text-on-surface-variant">{new Date(row.capturedAt).toLocaleString('ko-KR')}</td>
-                    <td className="px-lg py-md">
-                      <span className="text-xs font-bold border px-2 py-0.5 rounded border-secondary text-secondary">
-                        대기 중
-                      </span>
-                    </td>
+                    <td className="px-lg py-md text-xs text-on-surface">{row.country}</td>
+                    <td className="px-lg py-md text-xs text-on-surface">{row.totalDamageCount}건</td>
+                    <td className="px-lg py-md text-xs text-on-surface-variant">{new Date(row.createdAt).toLocaleString('ko-KR')}</td>
                   </tr>
                 ))
               ) : (

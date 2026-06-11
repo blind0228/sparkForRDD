@@ -15,10 +15,12 @@ import org.springframework.stereotype.Component;
 public class DataInitializer implements CommandLineRunner {
 
     private final UserRepository userRepository;
+    // private final RoadDamageRepository roadDamageRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) {
+        // 관리자 계정 생성
         if (userRepository.findByEmail("admin@example.com").isEmpty()) {
             userRepository.save(User.builder()
                     .email("admin@example.com")
@@ -29,5 +31,16 @@ public class DataInitializer implements CommandLineRunner {
                     .build());
             System.out.println("Default admin account created: admin@example.com / 1234");
         }
+
+        /* 
+        // 샘플 도로 손상 데이터 생성 - RoadDamage 엔티티 삭제됨
+        if (roadDamageRepository.count() == 0) {
+            roadDamageRepository.saveAll(List.of(
+                RoadDamage.builder().damageType("D00").latitude(37.5665).longitude(126.9780).imageX(100.0).imageY(200.0).country("South Korea").capturedAt(LocalDateTime.now().minusHours(2)).build(),
+                ...
+            ));
+            System.out.println("Sample road damage data created.");
+        }
+        */
     }
 }
