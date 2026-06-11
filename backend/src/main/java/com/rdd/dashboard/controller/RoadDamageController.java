@@ -7,12 +7,16 @@ import com.rdd.dashboard.entity.RoadDamageLabel;
 import com.rdd.dashboard.entity.RoadDamageMarker;
 import com.rdd.dashboard.repository.RoadDamageLabelRepository;
 import com.rdd.dashboard.repository.RoadDamageMarkerRepository;
+import com.rdd.dashboard.service.AiReportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,6 +32,18 @@ public class RoadDamageController {
 
     private final RoadDamageMarkerRepository roadDamageMarkerRepository;
     private final RoadDamageLabelRepository roadDamageLabelRepository;
+    private final AiReportService aiReportService;
+
+    @Operation(summary = "AI 분석 보고서 생성", description = "AI를 사용하여 현재 데이터를 분석하고 PDF 보고서를 생성합니다.")
+    @GetMapping("/report/ai")
+    public ResponseEntity<byte[]> getAiReport() {
+        byte[] pdfContent = aiReportService.generateAiReport();
+        
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=ai_road_damage_report.pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdfContent);
+    }
 
     @Operation(summary = "도로 손상 마커 조회 (페이징)", description = "데이터 목록 페이지를 위한 페이징된 마커 목록을 조회합니다.")
     @GetMapping

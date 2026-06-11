@@ -26,6 +26,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
   const [countryStats, setCountryStats] = useState<CountryStats[]>([]);
   const [recentMarkers, setRecentMarkers] = useState<RoadDamageMarker[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
   // 대미지 타입 한국어 매핑
   const typeMap: Record<string, string> = {
@@ -65,6 +66,31 @@ export const Dashboard: React.FC<DashboardProps> = () => {
 
     fetchData();
   }, []);
+
+  const handleAiReportDownload = async () => {
+    setIsGeneratingReport(true);
+    try {
+      const res = await fetch('/api/damages/report/ai');
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `AI_Road_Damage_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        alert('AI 보고서 생성 중 오류가 발생했습니다.');
+      }
+    } catch (error) {
+      console.error('Report download failed:', error);
+      alert('보고서 다운로드에 실패했습니다.');
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
 
   // 전체 건수 계산
   const totalDamages = stats.reduce((sum, item) => sum + item.count, 0);
@@ -135,9 +161,15 @@ export const Dashboard: React.FC<DashboardProps> = () => {
             <span className="material-symbols-outlined text-[18px]">calendar_today</span>
             최근 30일
           </button>
-          <button className="px-md py-sm bg-surface-container-lowest border border-outline-variant rounded-lg font-bold text-xs text-on-surface hover:bg-surface-container-low transition-colors flex items-center gap-xs">
-            <span className="material-symbols-outlined text-[18px]">download</span>
-            보고서 다운로드
+          <button 
+            onClick={handleAiReportDownload}
+            disabled={isGeneratingReport}
+            className="px-md py-sm bg-surface-container-lowest border border-outline-variant rounded-lg font-bold text-xs text-on-surface hover:bg-surface-container-low transition-colors flex items-center gap-xs disabled:opacity-50"
+          >
+            <span className="material-symbols-outlined text-[18px]">
+              {isGeneratingReport ? 'hourglass_empty' : 'download'}
+            </span>
+            {isGeneratingReport ? 'AI 분석 중...' : '보고서 다운로드'}
           </button>
         </div>
       </div>

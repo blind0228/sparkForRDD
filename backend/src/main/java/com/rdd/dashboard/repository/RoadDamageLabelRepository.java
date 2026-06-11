@@ -15,4 +15,11 @@ public interface RoadDamageLabelRepository extends JpaRepository<RoadDamageLabel
     @Query("SELECT new com.rdd.dashboard.dto.DamageStatsDto(rl.damageCode, rl.damageName, COUNT(rl)) " +
            "FROM RoadDamageLabel rl GROUP BY rl.damageCode, rl.damageName")
     List<DamageStatsDto> findDamageTypeStats();
+
+    @Query(value = "SELECT rm.country, rl.damage_code, COUNT(*) as count " +
+            "FROM road_damage_labels rl " +
+            "JOIN road_damage_markers rm ON rl.file_name = rm.file_name " +
+            "GROUP BY rm.country, rl.damage_code " +
+            "ORDER BY rm.country, count DESC", nativeQuery = true)
+    List<Object[]> findCountryDamageTypeStats();
 }
