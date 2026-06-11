@@ -23,42 +23,55 @@
 
 ### [Road Damage API]
 
-#### 2.2 전체 손상 목록 조회
+#### 2.2 도로 손상 페이징 조회
 - **Endpoint**: `GET /api/damages`
-- **설명**: 데이터베이스에 저장된 모든 도로 손상 정보를 반환합니다.
-- **Request**: 없음
+- **설명**: 조건에 맞는 도로 손상 목록을 페이징 및 필터링하여 반환합니다.
+- **Request Parameters**:
+    - `page` (optional): 페이지 번호 (기본값 0)
+    - `size` (optional): 한 페이지당 항목 수 (기본값 10)
+    - `damageType` (optional): 손상 유형 필터 (예: D00, ALL)
+- **Response**:
+    - **Status Code**: `200 OK`
+    - **Body**: `Page<RoadDamage>` (Spring Data Page 객체)
+        ```json
+        {
+          "content": [
+            {
+              "id": 1,
+              "damageType": "D00",
+              "latitude": 37.123456,
+              "longitude": 127.123456,
+              "capturedAt": "2026-06-01T15:30:00"
+            }
+          ],
+          "pageable": { ... },
+          "totalPages": 5,
+          "totalElements": 50,
+          "size": 10,
+          "number": 0
+        }
+        ```
+
+#### 2.3 지도 영역 데이터 조회
+- **Endpoint**: `GET /api/damages/map`
+- **설명**: 지도의 현재 화면 위경도 영역(Bounding Box) 내에 포함되는 데이터만 조회합니다.
+- **Request Parameters**:
+    - `minLat`, `maxLat`: 위도 최소/최대값
+    - `minLng`, `maxLng`: 경도 최소/최대값
+    - `damageType` (optional): 손상 유형 필터
 - **Response**:
     - **Status Code**: `200 OK`
     - **Body**: `List<RoadDamage>`
-        ```json
-        [
-          {
-            "id": 1,
-            "damageType": "D00",
-            "latitude": 37.123456,
-            "longitude": 127.123456,
-            "capturedAt": "2026-06-01T15:30:00"
-          }
-        ]
-        ```
 
-#### 2.3 손상 유형별 통계 조회
+#### 2.4 손상 유형별 통계 조회
 - **Endpoint**: `GET /api/damages/stats`
 - **설명**: 도로 손상 유형(damageType)별로 집계된 건수를 반환합니다.
 - **Request**: 없음
 - **Response**:
     - **Status Code**: `200 OK`
     - **Body**: `List<DamageStatsDto>`
-        ```json
-        [
-          {
-            "damageType": "D00",
-            "count": 15
-          }
-        ]
-        ```
 
-#### 2.4 도로 손상 정보 등록
+#### 2.5 도로 손상 정보 등록
 - **Endpoint**: `POST /api/damages`
 - **설명**: 새로운 도로 손상 정보를 등록합니다.
 - **Request Body**:
@@ -73,7 +86,7 @@
     - **Status Code**: `200 OK`
     - **Body**: 등록된 `RoadDamage` 객체
 
-#### 2.5 도로 손상 정보 삭제
+#### 2.6 도로 손상 정보 삭제
 - **Endpoint**: `DELETE /api/damages/{id}`
 - **설명**: ID를 기반으로 특정 도로 손상 정보를 삭제합니다.
 - **Response**:
@@ -81,9 +94,42 @@
 
 ---
 
+### [User API]
+
+#### 2.7 회원가입
+- **Endpoint**: `POST /api/users/register`
+- **설명**: 신규 사용자를 등록합니다.
+- **Request Body**: `UserRegisterRequestDto`
+    ```json
+    {
+      "email": "user@example.com",
+      "password": "password123",
+      "name": "홍길동",
+      "dept": "도로보수실무팀"
+    }
+    ```
+- **Response**:
+    - **Status Code**: `200 OK`
+    - **Body**: `UserResponseDto` (비밀번호 제외)
+
+#### 2.8 사용자 목록 조회
+- **Endpoint**: `GET /api/users`
+- **설명**: 시스템에 등록된 모든 사용자 정보를 반환합니다.
+- **Response**:
+    - **Status Code**: `200 OK`
+    - **Body**: `List<UserResponseDto>`
+
+#### 2.9 사용자 삭제
+- **Endpoint**: `DELETE /api/users/{id}`
+- **설명**: ID를 기반으로 특정 사용자를 삭제합니다.
+- **Response**:
+    - **Status Code**: `200 OK`
+
+---
+
 ### [Authentication API]
 
-#### 2.6 로그인
+#### 2.10 로그인
 - **Endpoint**: `POST /api/login`
 - **설명**: 세션 기반 로그인을 수행합니다.
 - **Request (Form-Data)**:
